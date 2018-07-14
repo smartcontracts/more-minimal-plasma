@@ -42,10 +42,7 @@ contract RootChain {
 
     uint256 constant public CHALLENGE_PERIOD = 1 weeks;
     uint256 constant public EXIT_BOND = 123456789;
-    /*
-     * Maximum number of transactions per block is set at 1024, so maximum block height would be 10.
-     */
-    uint256 constant public BLOCK_HEIGHT = 10;
+    uint256 constant public TREE_HEIGHT = 10; // Maximum number of transactions per block is set at 1024, so maximum tree height is 10.
 
     PriorityQueue exitQueue;
     uint256 public currentPlasmaBlockNumber;
@@ -93,18 +90,14 @@ contract RootChain {
      * Public functions
      */
 
-    function deposit(bytes _encodedDepositTx)
-        public
-        payable
-    {
-        bytes32 root = PlasmaCore.getDepositRoot( _encodedDepositTx, BLOCK_HEIGHT);
-        plasmaBlocks[currentBlockNumber] = PlasmaBlock({
-            root: root,
+    function deposit(bytes _encodedDepositTx) public payable {
+        plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
+            root: PlasmaCore.getDepositRoot(_encodedDepositTx, TREE_HEIGHT),
             timestamp: block.timestamp
         });
 
         emit DepositCreated(msg.sender, msg.value, currentBlockNumber);
-        currentBlockNumber = currentBlockNumber.add(1);
+        currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
     function commitPlasmaBlockRoot(bytes32 _root) public onlyOperator {
@@ -114,8 +107,7 @@ contract RootChain {
         });
 
         emit PlasmaBlockRootCommitted(currentPlasmaBlockNumber, _root);
-
-        currentPlasmaBlockNumber++;
+        currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
     function startExit(
