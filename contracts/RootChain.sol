@@ -23,7 +23,8 @@ contract RootChain {
         uint256 depositBlock
     );
 
-    event BlockSubmitted(
+    event PlasmaBlockRootCommitted(
+        uint256 blockNumber,
         bytes32 root
     );
 
@@ -42,14 +43,15 @@ contract RootChain {
     uint256 constant public EXIT_BOND = 123456789;
 
     PriorityQueue exitQueue;
-    uint256 public currentBlockNumber;
+    uint256 public currentPlasmaBlockNumber;
     address public operator;
 
-    mapping (uint256 => PlasmaBlock) public plasmaBlocks;
+    mapping (uint256 => PlasmaBlockRoot) public plasmaBlockRoots;
     mapping (uint256 => PlasmaExit) public plasmaExits;
 
-    struct PlasmaBlock {
+    struct PlasmaBlockRoot {
         bytes32 root;
+        uint256 timestamp;
     }
 
     struct PlasmaExit {
@@ -72,7 +74,6 @@ contract RootChain {
         _;
     }
 
-    
     /*
      * Constructor
      */
@@ -85,13 +86,19 @@ contract RootChain {
     /*
      * Public functions
      */
-    
+
     function deposit(bytes _encodedDepositTx) public {
 
     }
 
-    function submitBlock(bytes32 _root) public onlyOperator {
+    function commitPlasmaBlockRoot(bytes32 _root) public onlyOperator {
+        plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
+            root: _root,
+            timestamp: block.timestamp});
 
+        currentPlasmaBlockNumber++;
+
+        emit PlasmaBlockRootCommitted(currentPlasmaBlockNumber, _root);
     }
 
     function startExit(
