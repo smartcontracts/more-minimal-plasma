@@ -9,6 +9,7 @@ import "./PriorityQueue.sol";
  * @dev Plasma Battleship root chain contract implementation.
  */
 contract RootChain {
+    using SafeMath for uint256;
     using PlasmaCore for uint256;
     using PlasmaCore for bytes;
 
@@ -40,6 +41,10 @@ contract RootChain {
 
     uint256 constant public CHALLENGE_PERIOD = 1 weeks;
     uint256 constant public EXIT_BOND = 123456789;
+    /*
+     * Maximum number of transactions per block is set at 1024, so maximum block height would be 10.
+     */
+    uint256 constant public BLOCK_HEIGHT = 10;
 
     PriorityQueue exitQueue;
     uint256 public currentBlockNumber;
@@ -50,6 +55,7 @@ contract RootChain {
 
     struct PlasmaBlock {
         bytes32 root;
+        uint256 timestamp;
     }
 
     struct PlasmaExit {
@@ -86,15 +92,19 @@ contract RootChain {
      * Public functions
      */
 
-    function deposit(bytes _encodedDepositTx) public {
-        Transaction decodedDepositTx = PlasmaCore.decode(_encodedDepositTx);
-        //What is the structure?
+    function deposit(bytes _encodedDepositTx)
+        public
+        payable
+    {
+        //TODO: use library to calculate merkle root
+        bytes32 root = "gonna be calculated";
         plasmaBlocks[currentBlockNumber] = PlasmaBlock({
-            root: root
+            root: root,
+            timestamp: block.timestamp
         });
 
+        emit DepositCreated(msg.sender, msg.value, currentBlockNumber);
         currentBlockNumber = currentBlockNumber.add(1);
-        emit DepositCreated(owner, amount, currentBlockNumber);
     }
 
     function submitBlock(bytes32 _root) public onlyOperator {
