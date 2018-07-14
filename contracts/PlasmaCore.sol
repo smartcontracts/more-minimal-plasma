@@ -45,11 +45,7 @@ library PlasmaCore {
      * @param _tx RLP encoded transaction.
      * @return Decoded transaction.
      */
-    function decode(bytes memory _tx)
-        internal
-        pure
-        returns (Transaction)
-    {
+    function decode(bytes memory _tx) internal pure returns (Transaction) {
         RLP.RLPItem[] memory txList = _tx.toRLPItem().toList();
         RLP.RLPItem[] memory inputs = txList[0].toList();
         RLP.RLPItem[] memory outputs = txList[1].toList();
@@ -78,11 +74,7 @@ library PlasmaCore {
      * @param _utxoPosition UTXO position to decode.
      * @return The output's block number.
      */
-    function getBlknum(uint256 _utxoPosition)
-        internal
-        pure
-        returns (uint256)
-    {
+    function getBlknum(uint256 _utxoPosition) internal pure returns (uint256) {
         return _utxoPosition / BLOCK_OFFSET;
     }
 
@@ -91,11 +83,7 @@ library PlasmaCore {
      * @param _utxoPosition UTXO position to decode.
      * @return The output's transaction index.
      */
-    function getTxindex(uint256 _utxoPosition)
-        internal
-        pure
-        returns (uint256)
-    {
+    function getTxindex(uint256 _utxoPosition) internal pure returns (uint256) {
         return (_utxoPosition % BLOCK_OFFSET) / TX_OFFSET;
     }
 
@@ -104,11 +92,23 @@ library PlasmaCore {
      * @param _utxoPosition UTXO position to decode.
      * @return The output's index.
      */
-    function getOindex(uint256 _utxoPosition)
-        internal
-        pure
-        returns (uint8)
-    {
+    function getOindex(uint256 _utxoPosition) internal pure returns (uint8) {
         return uint8(_utxoPosition % TX_OFFSET);
+    }
+
+    /**
+     * @dev Calculates a deposit root given an encoded deposit transaction.
+     * @param _encodedDepositTx RLP encoded deposit transaction.
+     * @param _treeHeight Height of the Merkle tree.
+     * @return The deposit root.
+     */
+    function getDepositRoot(bytes _encodedDepositTx, uint256 _treeHeight) internal pure returns (bytes32) {
+        bytes32 root = keccak256(_encodedDepositTx);
+        bytes32 zeroHash = keccak256(abi.encodePacked(uint256(0)));
+        for (uint256 i = 0; i < _treeHeight; i++) {
+            root = keccak256(abi.encodePacked(root, zeroHash));
+            zeroHash = keccak256(abi.encodePacked(zeroHash, zeroHash));
+        }
+        return root;
     }
 }
