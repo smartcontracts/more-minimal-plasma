@@ -31,8 +31,8 @@ library PlasmaCore {
     }
 
     struct Transaction {
-        TransactionInput[4] inputs;
-        TransactionOutput[4] outputs;
+        TransactionInput[2] inputs;
+        TransactionOutput[2] outputs;
     }
 
     
@@ -47,7 +47,7 @@ library PlasmaCore {
      */
     function decode(bytes memory _tx)
         internal
-        view
+        pure
         returns (Transaction)
     {
         RLP.RLPItem[] memory txList = _tx.toRLPItem().toList();
@@ -55,7 +55,7 @@ library PlasmaCore {
         RLP.RLPItem[] memory outputs = txList[1].toList();
 
         Transaction memory decodedTx;
-        for (uint i = 0; i < 4; i++) {
+        for (uint i = 0; i < 2; i++) {
             RLP.RLPItem[] memory input = inputs[i].toList();
             decodedTx.inputs[i] = TransactionInput({
                 blknum: input[0].toUint(),
@@ -74,41 +74,41 @@ library PlasmaCore {
     }
 
     /**
-     * @dev Given an output ID, returns the block number.
-     * @param _outputId Output identifier to decode.
+     * @dev Given a UTXO position, returns the block number.
+     * @param _utxoPosition UTXO position to decode.
      * @return The output's block number.
      */
-    function getBlknum(uint256 _outputId)
+    function getBlknum(uint256 _utxoPosition)
         internal
         pure
         returns (uint256)
     {
-        return _outputId / BLOCK_OFFSET;
+        return _utxoPosition / BLOCK_OFFSET;
     }
 
     /**
-     * @dev Given an output ID, returns the transaction index.
-     * @param _outputId Output identifier to decode.
+     * @dev Given a UTXO position, returns the transaction index.
+     * @param _utxoPosition UTXO position to decode.
      * @return The output's transaction index.
      */
-    function getTxindex(uint256 _outputId)
+    function getTxindex(uint256 _utxoPosition)
         internal
         pure
         returns (uint256)
     {
-        return (_outputId % BLOCK_OFFSET) / TX_OFFSET;
+        return (_utxoPosition % BLOCK_OFFSET) / TX_OFFSET;
     }
 
     /**
-     * @dev Given an output ID, returns the output index.
-     * @param _outputId Output identifier to decode.
+     * @dev Given a UTXO position, returns the output index.
+     * @param _utxoPosition UTXO position to decode.
      * @return The output's index.
      */
-    function getOindex(uint256 _outputId)
+    function getOindex(uint256 _utxoPosition)
         internal
         pure
         returns (uint8)
     {
-        return uint8(_outputId % TX_OFFSET);
+        return uint8(_utxoPosition % TX_OFFSET);
     }
 }
