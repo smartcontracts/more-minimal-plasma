@@ -31,8 +31,8 @@ library PlasmaCore {
     }
 
     struct Transaction {
-        TransactionInput[4] inputs;
-        TransactionOutput[4] outputs;
+        TransactionInput[2] inputs;
+        TransactionOutput[2] outputs;
     }
 
     
@@ -55,7 +55,7 @@ library PlasmaCore {
         RLP.RLPItem[] memory outputs = txList[1].toList();
 
         Transaction memory decodedTx;
-        for (uint i = 0; i < 4; i++) {
+        for (uint i = 0; i < 2; i++) {
             RLP.RLPItem[] memory input = inputs[i].toList();
             decodedTx.inputs[i] = TransactionInput({
                 blknum: input[0].toUint(),
