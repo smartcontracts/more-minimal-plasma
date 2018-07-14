@@ -39,7 +39,7 @@ library PlasmaCore {
     /*
      * Internal functions
      */
-    
+
     /**
      * @dev Decodes an RLP encoded transaction.
      * @param _tx RLP encoded transaction.
