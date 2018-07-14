@@ -111,6 +111,19 @@ contract RootChain {
         uint256 _spendingTxSignatures,
         uint256 _spendingTxConfirmationSignatures
     ) public {
+		uint256 eUtxoPos = _encodedSpendingTx.getUtxoPos(_exitingUtxoPosition);
+
+        uint256 _txindex  = (_spendingTxPosition % 1000000000) / 10000;
+        bytes32 root = plasmaChain[_spendingTxPosition / 1000000000].root; //need to make plasma chain/child chain
+        var txHash = keccak256(_encodedSpendingTx);
+        var confirmationHash = keccak256(txHash, root);
+        var merkleHash = keccak256(txHash, _spendingTxSignatures);
+        address owner = exits[eUtxoPos].owner;
+
+        require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignatures));
+        require(merkleHash.checkMembership(txindex, root, _spendingTxInclusionProof));
+
+        delete exits[eUtxoPos].owner;
 
     }
 
