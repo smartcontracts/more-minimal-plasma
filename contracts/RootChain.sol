@@ -47,6 +47,7 @@ contract RootChain {
         uint256 amount;
     }
 
+
     /*
      * Modifiers
      */
