@@ -74,6 +74,7 @@ contract RootChain {
         _;
     }
 
+
     /*
      * Constructor
      */
@@ -94,7 +95,8 @@ contract RootChain {
     function commitPlasmaBlockRoot(bytes32 _root) public onlyOperator {
         plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
             root: _root,
-            timestamp: block.timestamp});
+            timestamp: block.timestamp
+        });
 
         emit PlasmaBlockRootCommitted(currentPlasmaBlockNumber, _root);
 
