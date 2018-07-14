@@ -1,11 +1,18 @@
 pragma solidity ^0.4.0;
 
+import "./PlasmaCore.sol";
+import "./PriorityQueue.sol";
+
 
 /**
  * @title RootChain
  * @dev Plasma Battleship root chain contract implementation. 
  */
 contract RootChain {
+    using PlasmaCore for uint256;
+    using PlasmaCore for bytes;
+
+
     /*
      * Events
      */
@@ -31,8 +38,11 @@ contract RootChain {
      * Storage
      */
 
+    uint256 constant public CHALLENGE_PERIOD = 1 weeks;
     uint256 constant public EXIT_BOND = 123456789;
 
+    PriorityQueue exitQueue;
+    uint256 public currentBlockNumber;
     address public operator;
 
     mapping (uint256 => PlasmaBlock) public plasmaBlocks;
