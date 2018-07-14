@@ -97,7 +97,7 @@ contract RootChain {
         payable
     {
         //TODO: use library to calculate merkle root
-        bytes32 root = "gonna be calculated";
+        bytes32 root = PlasmaCore.getDepositRoot( _encodedDepositTx, BLOCK_HEIGHT);
         plasmaBlocks[currentBlockNumber] = PlasmaBlock({
             root: root,
             timestamp: block.timestamp
