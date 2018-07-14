@@ -6,9 +6,10 @@ import "./PriorityQueue.sol";
 
 /**
  * @title RootChain
- * @dev Plasma Battleship root chain contract implementation. 
+ * @dev Plasma Battleship root chain contract implementation.
  */
 contract RootChain {
+    using SafeMath for uint256;
     using PlasmaCore for uint256;
     using PlasmaCore for bytes;
 
@@ -41,6 +42,7 @@ contract RootChain {
 
     uint256 constant public CHALLENGE_PERIOD = 1 weeks;
     uint256 constant public EXIT_BOND = 123456789;
+    uint256 constant public TREE_HEIGHT = 10; // Maximum number of transactions per block is set at 1024, so maximum tree height is 10.
 
     PriorityQueue exitQueue;
     uint256 public currentPlasmaBlockNumber;
@@ -88,8 +90,14 @@ contract RootChain {
      * Public functions
      */
 
-    function deposit(bytes _encodedDepositTx) public {
+    function deposit(bytes _encodedDepositTx) public payable {
+        plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
+            root: PlasmaCore.getDepositRoot(_encodedDepositTx, TREE_HEIGHT),
+            timestamp: block.timestamp
+        });
 
+        emit DepositCreated(msg.sender, msg.value, currentBlockNumber);
+        currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
     function commitPlasmaBlockRoot(bytes32 _root) public onlyOperator {
@@ -99,8 +107,7 @@ contract RootChain {
         });
 
         emit PlasmaBlockRootCommitted(currentPlasmaBlockNumber, _root);
-
-        currentPlasmaBlockNumber++;
+        currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
     function startExit(
@@ -124,6 +131,6 @@ contract RootChain {
     }
 
     function processExits() public {
-        
+
     }
 }
