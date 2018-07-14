@@ -96,9 +96,9 @@ contract RootChain {
             root: _root,
             timestamp: block.timestamp});
 
-        currentPlasmaBlockNumber++;
-
         emit PlasmaBlockRootCommitted(currentPlasmaBlockNumber, _root);
+
+        currentPlasmaBlockNumber++;
     }
 
     function startExit(
