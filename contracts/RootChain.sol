@@ -6,7 +6,7 @@ import "./PriorityQueue.sol";
 
 /**
  * @title RootChain
- * @dev Plasma Battleship root chain contract implementation. 
+ * @dev Plasma Battleship root chain contract implementation.
  */
 contract RootChain {
     using PlasmaCore for uint256;
@@ -72,7 +72,7 @@ contract RootChain {
         _;
     }
 
-    
+
     /*
      * Constructor
      */
@@ -85,9 +85,16 @@ contract RootChain {
     /*
      * Public functions
      */
-    
-    function deposit(bytes _encodedDepositTx) public {
 
+    function deposit(bytes _encodedDepositTx) public {
+        Transaction decodedDepositTx = PlasmaCore.decode(_encodedDepositTx);
+        //What is the structure?
+        plasmaBlocks[currentBlockNumber] = PlasmaBlock({
+            root: root
+        });
+
+        currentBlockNumber = currentBlockNumber.add(1);
+        emit DepositCreated(owner, amount, currentBlockNumber);
     }
 
     function submitBlock(bytes32 _root) public onlyOperator {
@@ -115,6 +122,6 @@ contract RootChain {
     }
 
     function processExits() public {
-        
+
     }
 }
