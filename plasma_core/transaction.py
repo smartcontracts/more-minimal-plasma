@@ -17,6 +17,7 @@ def pad_list(to_pad, pad_value, required_length):
     Returns:
         list: The padded list.
     """
+
     if len(to_pad) > required_length:
         raise ValueError('list cannot be longer than required length')
 
