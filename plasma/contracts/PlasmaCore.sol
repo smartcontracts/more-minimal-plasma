@@ -111,4 +111,19 @@ library PlasmaCore {
         }
         return root;
     }
+
+    function validateSignatures(bytes32 _txHash, bytes _signatures, bytes _confirmationSignatures) returns (bool) {
+        require(_signatures.length % 65 == 0);
+        require(_signatures.length == _confirmationSignatures.length);
+
+        for (uint256 offset = 0; offset < signatures.length; offset += 65) {
+            bytes memory signature = ByteUtils.slice(_signatures, offset, 65);
+            bytes memory confirmationSigature = ByteUtils.slice(_confirmationSignatures, offset, 65);
+            if (ECRecovery.recover(_txHash, signature) != ECRecovery.recover(keccak256(_txHash, confirmationSigature)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

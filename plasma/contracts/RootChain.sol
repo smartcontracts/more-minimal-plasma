@@ -13,7 +13,6 @@ contract RootChain {
     using PlasmaCore for uint256;
     using PlasmaCore for bytes;
 
-
     /*
      * Events
      */
@@ -118,6 +117,19 @@ contract RootChain {
         bytes _txSignatures,
         bytes _txConfirmationSignatures
     ) public payable onlyWithValue(EXIT_BOND) {
+        uint256 blockNumber = getBlknum(_utxoPosition)
+        uint256 txindex = getTxindex(_utxoPosition)
+        uint256 oindex = getOindex(_utxoPosition)
+        PlasmaCore.Transaction memory transaction = decode(_encodedTx);
+        require(transaction.outputs[oindex].owner == msg.sender)
+
+        bytes32 plasmaRoot = plasmaBlockRoots[blockNumber].root
+        require(checkMembership(transaction, txindex, plasmaRoot, _txInclusionProof))
+
+        // TODO: valid the signatures(??)
+        // TODO: put the exit in the exit queue
+
+        emit ExitStarted(msg.sender, _utxoPosition, amount??)
 
     }
 
