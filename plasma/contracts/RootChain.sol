@@ -123,8 +123,8 @@ contract RootChain {
         PlasmaCore.Transaction memory transaction = decode(_encodedTx);
         require(transaction.outputs[oindex].owner == msg.sender)
 
-        bytes32 plasmaRoot = plasmaBlockRoots[blockNumber].root
-        require(checkMembership(keccak256(_encodedTx), txindex, plasmaRoot, _txInclusionProof))
+        bytes32 plasmaBlockRoot = plasmaBlockRoots[blockNumber].root
+        require(checkMembership(keccak256(_encodedTx), txindex, plasmaBlockRoot, _txInclusionProof))
 
 
         // TODO: valid the signatures(??)
