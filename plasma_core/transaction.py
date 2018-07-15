@@ -84,10 +84,11 @@ class Transaction(rlp.Serializable):
         ('signatures', CountableList(binary, NUM_TXOS))
     )
 
-    def __init__(self, inputs=[], outputs=[], signatures=[]):
+    def __init__(self, inputs=[], outputs=[], signatures=[], confirmations=[]):
         inputs = inputs or [self.DEFAULT_INPUT] * self.NUM_TXOS
         outputs = outputs or [self.DEFAULT_OUTPUT] * self.NUM_TXOS
         signatures = signatures or [NULL_SIGNATURE] * self.NUM_TXOS
+        confirmations = confirmations or [NULL_SIGNATURE] * self.NUM_TXOS
 
         padded_inputs = pad_list(inputs, self.DEFAULT_INPUT, self.NUM_TXOS)
         padded_outputs = pad_list(outputs, self.DEFAULT_OUTPUT, self.NUM_TXOS)
@@ -95,11 +96,20 @@ class Transaction(rlp.Serializable):
         self.inputs = [TransactionInput(*i) for i in padded_inputs]
         self.outputs = [TransactionOutput(*o) for o in padded_outputs]
         self.signatures = signatures[:]
+        self.confirmations = confirmations[:]
         self.spent = [False] * self.NUM_TXOS
 
     @property
     def hash(self):
         return utils.sha3(self.encoded)
+
+    @property
+    def confirmation_hash(self):
+        return utils.sha3(self.hash)
+
+    @property
+    def full_signatures(self):
+        return b''.join(self.signatures + self.confirmations)
 
     @property
     def signers(self):
@@ -122,6 +132,16 @@ class Transaction(rlp.Serializable):
         """
 
         self.signatures[index] = sign(self.hash, key)
+
+    def confirm(self, index, key):
+        """Adds a confirmation signature for this transaction.
+
+        Args:
+            index (int): Index of the input owner by the signer.
+            key (bytes): Private key to be used to sign.
+        """
+
+        self.confirmations[index] = sign(self.confirmation_hash, key)
 
 
 class UnsignedTransaction(rlp.Serializable):

@@ -5,6 +5,7 @@ from ethereum.abi import ContractTranslator
 from ethereum.tools import tester
 from ethereum.config import config_metropolis
 from plasma_core.account import EthereumAccount
+from plasma_core.transaction import Transaction
 from plasma_core.utils.deployer import Deployer
 from plasma_core.utils.address import address_to_hex
 
@@ -53,3 +54,20 @@ def root_chain(ethtester, get_contract):
     contract = get_contract('RootChain')
     ethtester.chain.mine()
     return contract
+
+
+@pytest.fixture
+def get_deposit_tx():
+    def create_deposit_tx(owner, amount):
+        """Generates a deposit transaction.
+
+        Args:
+            owner (bytes): Address of the user to own the deposit.
+            amount (int): Amount to be deposited.
+
+        Returns:
+            Transaction: A transaction representing the deposit.
+        """
+
+        return Transaction(inputs=[], outputs=[(owner, amount)])
+    return create_deposit_tx
