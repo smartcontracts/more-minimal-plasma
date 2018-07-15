@@ -83,6 +83,7 @@ contract RootChain {
 
     constructor() public {
         operator = msg.sender;
+        currentPlasmaBlockNumber = 1;
     }
 
 
@@ -96,7 +97,7 @@ contract RootChain {
             timestamp: block.timestamp
         });
 
-        emit DepositCreated(msg.sender, msg.value, currentBlockNumber);
+        emit DepositCreated(msg.sender, msg.value, currentPlasmaBlockNumber);
         currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
@@ -114,8 +115,9 @@ contract RootChain {
         uint256 _utxoPosition,
         bytes _encodedTx,
         bytes _txInclusionProof,
-        bytes _txSignatures
-    ) public onlyWithValue(EXIT_BOND) {
+        bytes _txSignatures,
+        bytes _txConfirmationSignatures
+    ) public payable onlyWithValue(EXIT_BOND) {
 
     }
 

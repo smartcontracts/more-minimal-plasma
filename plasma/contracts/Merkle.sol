@@ -31,7 +31,7 @@ library Merkle {
         bytes32 proofElement;
         bytes32 computedHash = _leaf;
         uint256 index = _index;
-        for (uint256 i = 32; i <= _proof.length / 32; i += 32) {
+        for (uint256 i = 32; i <= _proof.length; i += 32) {
             assembly {
                 proofElement := mload(add(_proof, i))
             }
