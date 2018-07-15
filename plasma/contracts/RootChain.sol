@@ -83,10 +83,7 @@ contract RootChain {
 
     constructor() public {
         operator = msg.sender;
-<<<<<<< HEAD:plasma/contracts/RootChain.sol
         currentPlasmaBlockNumber = 1;
-=======
->>>>>>> 7342889b8dab955a625ec4c8125fe1ed42b19ee8:contracts/RootChain.sol
         exitQueue = new PriorityQueue();
     }
 
@@ -151,11 +148,7 @@ contract RootChain {
             currentExit = plasmaExits[utxoPos];
             currentExit.owner.transfer(currentExit.amount);
             exitQueue.delMin();
-<<<<<<< HEAD:plasma/contracts/RootChain.sol
 
-=======
-            
->>>>>>> 7342889b8dab955a625ec4c8125fe1ed42b19ee8:contracts/RootChain.sol
             //Delete owner but keep amount to prevent another exit with the same utxoPos
             delete plasmaExits[utxoPos].owner;
             if (exitQueue.currentSize() > 0){
