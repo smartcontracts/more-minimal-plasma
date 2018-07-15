@@ -83,6 +83,7 @@ contract RootChain {
 
     constructor() public {
         operator = msg.sender;
+        exitQueue = new PriorityQueue();
     }
 
 
@@ -96,7 +97,7 @@ contract RootChain {
             timestamp: block.timestamp
         });
 
-        emit DepositCreated(msg.sender, msg.value, currentBlockNumber);
+        emit DepositCreated(msg.sender, msg.value, currentPlasmaBlockNumber);
         currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
@@ -130,7 +131,41 @@ contract RootChain {
 
     }
 
-    function processExits() public {
+    /*
+    * Assumes that only ETH tokens will be used. We get the exit with the highest priority in the queue and split it because each exit is a concatenation of utxopos and timestamp.
+    */
+    function processExits()
+        public
+    {
+        uint256 utxoPos;
+        uint256 exitable_at;
+        (utxoPos, exitable_at) = getNextExit();
+        PlasmaExit memory currentExit = plasmaExits[utxoPos];
 
+        while(exitable_at < block.timestamp){
+            currentExit = plasmaExits[utxoPos];
+            currentExit.owner.transfer(currentExit.amount);
+            exitQueue.delMin();
+            
+            //Delete owner but keep amount to prevent another exit with the same utxoPos
+            delete plasmaExits[utxoPos].owner;
+            if (exitQueue.currentSize() > 0){
+                (utxoPos, exitable_at) = getNextExit();
+            } else {
+                return;
+            }
+        }
+
+    }
+
+    function getNextExit()
+        public
+        view
+        returns (uint256, uint256)
+    {
+        uint256 highestPriority = exitQueue.getMin();
+        uint256 utxoPos = uint256(uint128(highestPriority));
+        uint256 exitable_at = highestPriority>>128;
+        return (utxoPos, exitable_at);
     }
 }
