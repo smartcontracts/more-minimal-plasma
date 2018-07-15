@@ -44,7 +44,6 @@ class TestingLanguage(object):
         accounts (EthereumAccount[]): List of available accounts.
         operator (EthereumAccount): The operator's account.
         child_chain (ChildChain): Child chain instance.
-        confirmations (dict): A mapping from transaction IDs to confirmation signatures.
     """
 
     def __init__(self, root_chain, ethtester):
@@ -141,6 +140,15 @@ class TestingLanguage(object):
         self.root_chain.startExit(utxo_position, *self.get_exit_proof(utxo_position), sender=owner.key, value=bond)
 
     def get_exit_proof(self, utxo_position):
+        """Returns information required to exit
+
+        Args:
+            utxo_position (int): Position of the UTXO to be exited.
+        
+        Returns:
+            bytes, bytes, bytes, bytes: Information necessary to exit the UTXO.
+        """
+
         (blknum, _, _) = decode_utxo_position(utxo_position)
         block = self.child_chain.get_block(blknum)
 

@@ -44,7 +44,8 @@ class TransactionInput(rlp.Serializable):
         self.oindex = oindex
 
     @property
-    def identifier(self):
+    def position(self):
+        """This input's position in the chain"""
         return encode_utxo_position(self.blknum, self.txindex, self.oindex)
 
 
@@ -101,34 +102,37 @@ class Transaction(rlp.Serializable):
 
     @property
     def hash(self):
+        """Hash of the RLP encoding of this transaction"""
         return utils.sha3(self.encoded)
 
     @property
     def confirmation_hash(self):
+        """Double of the RLP encoding of this transaction"""
         return utils.sha3(self.hash)
 
     @property
-    def full_signatures(self):
-        return self.joined_signatures + self.joined_confirmations
-
-    @property
     def joined_signatures(self):
+        """Transaction signatures joined into a single byte string"""
         return b''.join(self.signatures)
 
     @property
     def joined_confirmations(self):
+        """Confirmation signatures joined into a single byte string"""
         return b''.join(self.confirmations)
 
     @property
     def signers(self):
+        """List of addresses that have signed this transaction"""
         return [get_signer(self.hash, sig) if sig != NULL_SIGNATURE else NULL_ADDRESS for sig in self.signatures]
 
     @property
     def encoded(self):
+        """RLP encoded representation of this transaction"""
         return rlp.encode(self, UnsignedTransaction)
 
     @property
     def is_deposit(self):
+        """Whether or not this is a deposit transaction"""
         return all([i.blknum == 0 for i in self.inputs])
 
     def sign(self, index, key):

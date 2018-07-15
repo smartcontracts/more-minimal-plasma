@@ -55,14 +55,14 @@ class ChildChain(object):
             if tx_input.blknum == 0:
                 continue
 
-            input_tx = self.get_transaction(tx_input.identifier)
+            input_tx = self.get_transaction(tx_input.position)
             input_amount += input_tx.outputs[tx_input.oindex].amount
 
             if tx.signatures[i] == NULL_SIGNATURE or tx.signers[i] != input_tx.outputs[tx_input.oindex].owner:
                 raise InvalidTxSignatureException('failed to validate tx')
 
             # Check to see if the input is already spent.
-            if input_tx.spent[tx_input.oindex] or tx_input.identifier in temp_spent:
+            if input_tx.spent[tx_input.oindex] or tx_input.position in temp_spent:
                 raise TxAlreadySpentException('failed to validate tx')
 
         if not tx.is_deposit and input_amount < output_amount:
@@ -82,7 +82,7 @@ class ChildChain(object):
         for i in tx.inputs:
             if i.blknum == 0:
                 continue
-            input_tx = self.get_transaction(i.identifier)
+            input_tx = self.get_transaction(i.position)
             input_tx.spent[i.oindex] = True
 
     def _validate_block(self, block):
