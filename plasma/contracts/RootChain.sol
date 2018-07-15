@@ -96,7 +96,7 @@ contract RootChain {
             timestamp: block.timestamp
         });
 
-        emit DepositCreated(msg.sender, msg.value, currentBlockNumber);
+        emit DepositCreated(msg.sender, msg.value, currentPlasmaBlockNumber);
         currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 

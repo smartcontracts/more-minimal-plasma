@@ -26,7 +26,7 @@ clean-pyc:
 
 .PHONY: lint
 lint:
-	flake8 contracts utilities
+	flake8 plasma plasma_core tests
 
 .PHONY: test
 test:
