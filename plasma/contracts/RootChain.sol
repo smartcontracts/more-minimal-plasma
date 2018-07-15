@@ -83,6 +83,7 @@ contract RootChain {
 
     constructor() public {
         operator = msg.sender;
+        currentPlasmaBlockNumber = 1;
     }
 
 
