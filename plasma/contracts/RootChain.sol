@@ -124,7 +124,8 @@ contract RootChain {
         require(transaction.outputs[oindex].owner == msg.sender)
 
         bytes32 plasmaRoot = plasmaBlockRoots[blockNumber].root
-        require(checkMembership(transaction, txindex, plasmaRoot, _txInclusionProof))
+        require(checkMembership(keccak256(_encodedTx), txindex, plasmaRoot, _txInclusionProof))
+
 
         // TODO: valid the signatures(??)
         // TODO: put the exit in the exit queue
