@@ -8,6 +8,14 @@ from plasma_core.exceptions import (InvalidBlockSignatureException,
 
 
 class ChildChain(object):
+    """Stores an immutable chain of Plasma blocks.
+
+    Attributes:
+        operator (bytes): Address of the Plasma operator.
+        blocks (dict): Mapping from block numbers to blocks.
+        parent_queue (dict): Mapping from block numbers to pending children.
+        current_plasma_block_number (int): The current Plasma block number.
+    """
 
     def __init__(self, operator):
         self.operator = operator
@@ -16,6 +24,12 @@ class ChildChain(object):
         self.current_plasma_block_number = 1
 
     def add_block(self, block):
+        """Adds a block to the chain of blocks if it's valid.
+
+        Attributes:
+            block (Block): Block to be added.
+        """
+
         # Is the block being added to the head?
         if block.number == self.current_plasma_block_number:
             # Validate the block.
@@ -45,6 +59,13 @@ class ChildChain(object):
         return True
 
     def validate_transaction(self, tx, temp_spent={}):
+        """Determines whether a transaction is valid.
+
+        Attributes:
+            tx (Transaction): Transaction to be validated.
+            temp_spent (dict): Optional additional set of spent transactions.
+        """
+
         input_amount = 0
         output_amount = sum([o.amount for o in tx.outputs])
 
@@ -69,16 +90,37 @@ class ChildChain(object):
             raise TxAmountMismatchException('failed to validate tx')
 
     def get_block(self, blknum):
+        """Returns the block for a given block number.
+
+        Args:
+            blknum (int): Block number to query.
+
+        Returns:
+            Block: Corresponding block object.
+        """
+
         return self.blocks[blknum]
 
-    def get_transaction(self, transaction_id):
-        (blknum, txindex, _) = decode_utxo_position(transaction_id)
+    def get_transaction(self, transaction_position):
+        """Returns the transaction at a given position.
+
+        Args:
+            transaction_position (int): Transaction position to query.
+
+        Returns:
+            Transaction: Corresponding transaction object.
+        """
+
+        (blknum, txindex, _) = decode_utxo_position(transaction_position)
         return self.blocks[blknum].transactions[txindex]
 
-    def get_current_block_num(self):
-        return self.current_plasma_block_number
-
     def _apply_transaction(self, tx):
+        """Marks the inputs to a transaction as spent.
+
+        Args:
+            tx (Transaction): Transaction to modify.
+        """
+
         for i in tx.inputs:
             if i.blknum == 0:
                 continue
@@ -86,6 +128,12 @@ class ChildChain(object):
             input_tx.spent[i.oindex] = True
 
     def _validate_block(self, block):
+        """Determines if a block is valid.
+
+        Args:
+            block (Block): Block to validate.
+        """
+
         # Check for a valid signature.
         if not block.is_deposit_block and (block.signature == NULL_SIGNATURE or address_to_hex(block.signer) != self.operator):
             raise InvalidBlockSignatureException('failed to validate block')
@@ -94,6 +142,12 @@ class ChildChain(object):
             self.validate_transaction(tx)
 
     def _apply_block(self, block):
+        """Marks all of the transactions in a block as spent and inserts it.
+
+        Args:
+            block (Block): Block to insert.
+        """
+
         for tx in block.transactions:
             self._apply_transaction(tx)
         self.blocks[block.number] = block
