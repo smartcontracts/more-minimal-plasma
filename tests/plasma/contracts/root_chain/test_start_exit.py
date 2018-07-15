@@ -1,170 +1,168 @@
 import pytest
 from ethereum.tools.tester import TransactionFailed
-from plasma_core.fixed_merkle import FixedMerkle
-from plasma_core.transaction import Transaction
-from plasma_core.utils.transactions import encode_utxo_id
+from plasma_core.utils.transactions import encode_utxo_position
 
 
-TREE_DEPTH = 10
-
-
-def test_start_exit_should_succeed(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_should_succeed(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
-    # Spend the deposit and submit the block
-    spend_tx = Transaction(inputs=[(1, 0, 0)], outputs=[(owner.address, amount)])
-    spend_tx.sign(0, owner.key)
-    merkle = FixedMerkle(TREE_DEPTH, [spend_tx.encoded])
-    root_chain.commitPlasmaBlockRoot(merkle.root)
-    spend_tx.confirm(0, owner.key)
+    # Spend the deposit
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
 
     # Start an exit
-    utxo_position = encode_utxo_id(2, 0, 0)
-    encoded_tx = spend_tx.encoded
-    proof = merkle.create_membership_proof(spend_tx.encoded)
-    signatures = spend_tx.full_signatures
-    root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+    testlang.start_exit(owner, spend_utxo_position)
 
     # Check the exit was created correctly
-    plasma_exit = root_chain.plasmaExit(utxo_position)
+    plasma_exit = testlang.get_plasma_exit(spend_utxo_position)
     assert plasma_exit.owner == owner.address
     assert plasma_exit.amount == amount
 
 
-def test_start_exit_from_deposit_should_succeed(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_from_deposit_should_succeed(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
-    # Exit directly from the deposit, don't need to include signatures
-    merkle = FixedMerkle(TREE_DEPTH, [deposit_tx.encoded])
-    utxo_position = encode_utxo_id(1, 0, 0)
-    encoded_tx = deposit_tx.encoded
-    proof = merkle.create_membership_proof(deposit_tx.encoded)
-    signatures = b''
-    root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+    # Start an exit
+    testlang.start_exit(owner, deposit_utxo_position)
 
     # Check the exit was created correctly
-    plasma_exit = root_chain.plasmaExit(utxo_position)
+    plasma_exit = testlang.get_plasma_exit(deposit_utxo_position)
     assert plasma_exit.owner == owner.address
     assert plasma_exit.amount == amount
 
 
-def test_start_exit_wrong_position_should_fail(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_wrong_position_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
     # Spend the deposit and submit the block
-    spend_tx = Transaction(inputs=[(1, 0, 0)], outputs=[(owner.address, amount)])
-    spend_tx.sign(0, owner.key)
-    merkle = FixedMerkle(TREE_DEPTH, [spend_tx.encoded])
-    root_chain.commitPlasmaBlockRoot(merkle.root)
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
 
     # Start an exit
-    utxo_position = encode_utxo_id(0, 0, 0)  # not the correct position
-    encoded_tx = spend_tx.encoded
-    proof = merkle.create_membership_proof(spend_tx.encoded)
-    signatures = spend_tx.full_signatures
+    bond = testlang.root_chain.EXIT_BOND()
+    utxo_position = encode_utxo_position(0, 0, 0)  # Using wrong utxo position
     with pytest.raises(TransactionFailed):
-        root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+        testlang.root_chain.startExit(utxo_position, *testlang.get_exit_proof(spend_utxo_position), value=bond)
 
 
-def test_start_exit_wrong_tx_should_fail(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_wrong_bond_value_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
     # Spend the deposit and submit the block
-    spend_tx = Transaction(inputs=[(1, 0, 0)], outputs=[(owner.address, amount)])
-    spend_tx.sign(0, owner.key)
-    merkle = FixedMerkle(TREE_DEPTH, [spend_tx.encoded])
-    root_chain.commitPlasmaBlockRoot(merkle.root)
-    spend_tx.confirm(0, owner.key)
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
 
     # Start an exit
-    utxo_position = encode_utxo_id(2, 0, 0)
-    encoded_tx = deposit_tx.encoded  # wrong transaction
-    proof = merkle.create_membership_proof(spend_tx.encoded)
-    signatures = spend_tx.full_signatures
+    bond = 0  # Using wrong bond value
     with pytest.raises(TransactionFailed):
-        root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+        testlang.root_chain.startExit(spend_utxo_position, *testlang.get_exit_proof(spend_utxo_position), value=bond)
 
 
-def test_start_exit_invalid_proof_should_fail(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_wrong_sender_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
     # Spend the deposit and submit the block
-    spend_tx = Transaction(inputs=[(1, 0, 0)], outputs=[(owner.address, amount)])
-    spend_tx.sign(0, owner.key)
-    merkle = FixedMerkle(TREE_DEPTH, [spend_tx.encoded])
-    root_chain.commitPlasmaBlockRoot(merkle.root)
-    spend_tx.confirm(0, owner.key)
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
 
     # Start an exit
-    utxo_position = encode_utxo_id(2, 0, 0)
-    encoded_tx = spend_tx.encoded
-    proof = b''  # use an empty proof
-    signatures = spend_tx.full_signatures
+    bond = testlang.root_chain.EXIT_BOND()
+    sender = testlang.accounts[1]  # Using wrong sender
     with pytest.raises(TransactionFailed):
-        root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+        testlang.root_chain.startExit(spend_utxo_position, *testlang.get_exit_proof(spend_utxo_position), value=bond, sender=sender.key)
 
 
-def test_start_exit_invalid_signature_should_fail(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_wrong_tx_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
     # Spend the deposit and submit the block
-    spend_tx = Transaction(inputs=[(1, 0, 0)], outputs=[(owner.address, amount)])
-    spend_tx.sign(0, ethtester.accounts[1].key)  # sign with the wrong account
-    merkle = FixedMerkle(TREE_DEPTH, [spend_tx.encoded])
-    root_chain.commitPlasmaBlockRoot(merkle.root)
-    spend_tx.confirm(0, owner.key)
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
 
     # Start an exit
-    utxo_position = encode_utxo_id(2, 0, 0)
-    encoded_tx = spend_tx.encoded
-    proof = merkle.create_membership_proof(spend_tx.encoded)
-    signatures = spend_tx.full_signatures
+    bond = testlang.root_chain.EXIT_BOND()
+    encoded_tx = testlang.child_chain.get_transaction(deposit_utxo_position).encoded  # Using wrong encoded tx
+    (_, proof, signatures, confirmation_signatures) = testlang.get_exit_proof(spend_utxo_position)
     with pytest.raises(TransactionFailed):
-        root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+        testlang.root_chain.startExit(spend_utxo_position, encoded_tx, proof, signatures, confirmation_signatures, value=bond)
 
 
-def test_start_exit_invalid_conf_signature_should_fail(root_chain, ethtester, get_deposit_tx):
-    owner, amount = ethtester.accounts[0], 100
+def test_start_exit_invalid_proof_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
 
     # Create a deposit
-    deposit_tx = get_deposit_tx(owner.address, amount)
-    root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
 
     # Spend the deposit and submit the block
-    spend_tx = Transaction(inputs=[(1, 0, 0)], outputs=[(owner.address, amount)])
-    spend_tx.sign(0, owner.key)
-    merkle = FixedMerkle(TREE_DEPTH, [spend_tx.encoded])
-    root_chain.commitPlasmaBlockRoot(merkle.root)
-    spend_tx.confirm(0, ethtester.accounts[1].key)  # confirm with the wrong account
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
 
     # Start an exit
-    utxo_position = encode_utxo_id(2, 0, 0)
-    encoded_tx = spend_tx.encoded
-    proof = merkle.create_membership_proof(spend_tx.encoded)
-    signatures = spend_tx.full_signatures
+    bond = testlang.root_chain.EXIT_BOND()
+    proof = b''  # Using empty proof
+    (encoded_tx, _, signatures, confirmation_signatures) = testlang.get_exit_proof(spend_utxo_position)
     with pytest.raises(TransactionFailed):
-        root_chain.startExit(utxo_position, encoded_tx, proof, signatures)
+        testlang.root_chain.startExit(spend_utxo_position, encoded_tx, proof, signatures, confirmation_signatures, value=bond)
+
+
+def test_start_exit_invalid_signature_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
+
+    # Create a deposit
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
+
+    # Spend the deposit and submit the block
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
+
+    # Start an exit
+    bond = testlang.root_chain.EXIT_BOND()
+    signatures = b''  # Using empty signature
+    (encoded_tx, proof, _, confirmation_signatures) = testlang.get_exit_proof(spend_utxo_position)
+    with pytest.raises(TransactionFailed):
+        testlang.root_chain.startExit(spend_utxo_position, encoded_tx, proof, signatures, confirmation_signatures, value=bond)
+
+
+def test_start_exit_invalid_conf_signature_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
+
+    # Create a deposit
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
+
+    # Spend the deposit and submit the block
+    spend_utxo_position = testlang.spend_utxo(deposit_utxo_position, owner, amount, owner)
+    testlang.confirm(spend_utxo_position, 0, owner)
+
+    # Start an exit
+    bond = testlang.root_chain.EXIT_BOND()
+    confirmation_signatures = b''  # Using empty confirmation signature
+    (encoded_tx, proof, signatures, _) = testlang.get_exit_proof(spend_utxo_position)
+    with pytest.raises(TransactionFailed):
+        testlang.root_chain.startExit(spend_utxo_position, encoded_tx, proof, signatures, confirmation_signatures, value=bond)

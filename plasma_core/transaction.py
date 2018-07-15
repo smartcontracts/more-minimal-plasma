@@ -2,7 +2,7 @@ import rlp
 from rlp.sedes import big_endian_int, binary, CountableList
 from ethereum import utils
 from plasma_core.utils.signatures import sign, get_signer
-from plasma_core.utils.transactions import encode_utxo_id
+from plasma_core.utils.transactions import encode_utxo_position
 from plasma_core.constants import NULL_SIGNATURE, NULL_ADDRESS
 
 
@@ -45,7 +45,7 @@ class TransactionInput(rlp.Serializable):
 
     @property
     def identifier(self):
-        return encode_utxo_id(self.blknum, self.txindex, self.oindex)
+        return encode_utxo_position(self.blknum, self.txindex, self.oindex)
 
 
 class TransactionOutput(rlp.Serializable):
@@ -109,7 +109,15 @@ class Transaction(rlp.Serializable):
 
     @property
     def full_signatures(self):
-        return b''.join(self.signatures + self.confirmations)
+        return self.joined_signatures + self.joined_confirmations
+
+    @property
+    def joined_signatures(self):
+        return b''.join(self.signatures)
+
+    @property
+    def joined_confirmations(self):
+        return b''.join(self.confirmations)
 
     @property
     def signers(self):
