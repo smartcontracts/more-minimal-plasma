@@ -131,6 +131,8 @@ contract RootChain {
 
         require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
         require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
+        require(transactionOutput.amount > 0);
+        require(plasmaExits[_utxoPosition].amount == 0);
 
         uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
         exitQueue.insert(exitableAt, _utxoPosition);
@@ -174,6 +176,29 @@ contract RootChain {
     }
 
     function processExits() public {
+        uint256 exitableAt;
+        uint256 utxoPosition;
 
+        // Iterate while the queue is not empty.
+        while(exitQueue.currentSize() > 0){
+            (exitableAt, utxoPosition) = exitQueue.getMin();
+
+            // Check if this exit has finished its challenge period.
+            if (exitableAt > block.timestamp){
+                return;
+            }
+
+            PlasmaExit memory currentExit = plasmaExits[utxoPosition];
+
+            // If an exit was successfully challenged, owner would be address(0).
+            if (currentExit.owner != address(0)){
+                currentExit.owner.transfer(currentExit.amount);
+
+                // Delete owner but keep amount to prevent another exit from the same UTXO.
+                delete plasmaExits[utxoPosition].owner;
+            }
+
+            exitQueue.delMin();
+        }
     }
 }
