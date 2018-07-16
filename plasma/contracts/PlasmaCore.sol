@@ -82,7 +82,7 @@ library PlasmaCore {
 
     /**
      * @dev Given a UTXO position, returns the transaction index.
-     * @param _utxoPosition UTXO position to decode.
+     * @param _utxoPosition UTXO position to decode.s
      * @return The output's transaction index.
      */
     function getTxIndex(uint256 _utxoPosition) internal pure returns (uint256) {
@@ -96,6 +96,10 @@ library PlasmaCore {
      */
     function getOutputIndex(uint256 _utxoPosition) internal pure returns (uint8) {
         return uint8(_utxoPosition % TX_OFFSET);
+    }
+
+    function getInputPosition(TransactionInput memory _txInput) internal pure returns (uint256) {
+        return (_txInput.blknum * BLOCK_OFFSET) + (_txInput.txindex * TX_OFFSET) + (_txInput * 1);
     }
 
     /**
