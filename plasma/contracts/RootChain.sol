@@ -155,7 +155,7 @@ contract RootChain {
     }
 
     /*
-    * Assumes that only ETH tokens will be used. We get the exit with the highest priority in the queue and split it because each exit is a concatenation of utxopos and timestamp.
+    * Assumes that only ETH tokens will be used. This function then checks that the timestamp that the transaction can exit at has to be before the time now.
     */
     function processExits()
         public
@@ -180,7 +180,9 @@ contract RootChain {
         }
 
     }
-
+    /*
+    *We get the exit with the highest priority in the queue and split it because each exit is a concatenation of utxopos and timestamp.
+    */
     function getNextExit()
         public
         view
