@@ -136,10 +136,10 @@ contract RootChain {
     function challengeExit(
         uint256 _exitingUtxoPosition,
         uint256 _spendingTxPosition,
-        uint256 _encodedSpendingTx,
-        uint256 _spendingTxInclusionProof,
-        uint256 _spendingTxSignatures,
-        uint256 _spendingTxConfirmationSignatures
+        bytes _encodedSpendingTx,
+        bytes _spendingTxInclusionProof,
+        bytes _spendingTxSignatures,
+        bytes _spendingTxConfirmationSignatures
     ) public {
 
     }
