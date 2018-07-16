@@ -144,10 +144,7 @@ contract RootChain {
         emit ExitStarted(msg.sender, _utxoPosition, transactionOutput.amount);
     }
 
-    function getCount() public constant returns(uint count) 
-    {
-    return array.length;
-    }
+
 
     function challengeExit(
         uint256 _exitingUtxoPosition,
