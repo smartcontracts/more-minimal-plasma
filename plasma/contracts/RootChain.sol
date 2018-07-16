@@ -130,7 +130,7 @@ contract RootChain {
         bytes32 txHash = keccak256(_encodedTx);
 
         require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
-        require(PlasmaCore.validateSignaturs(txHash, _txSignatures, _txConfirmationSignatures));
+        require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
         require(transactionOutput.amount > 0);
         require(plasmaExits[_utxoPosition].amount == 0);
 
