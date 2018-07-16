@@ -168,7 +168,7 @@ class TestingLanguage(object):
         """
 
         proof_data = self.get_challenge_proof(exiting_utxo_position, spending_tx_position)
-        self.root_chain.challengeExit(exiting_utxo_position, spending_tx_position, *proof_data)
+        self.root_chain.challengeExit(exiting_utxo_position, *proof_data)
 
     def get_challenge_proof(self, exiting_utxo_position, spending_tx_position):
         """Returns information required to submit a challenge.
@@ -178,16 +178,13 @@ class TestingLanguage(object):
             spending_tx_position (int): Position of the transaction that spent the UTXO.
 
         Returns:
-            int, bytes, bytes, bytes, bytes: Information necessary to create a challenge proof.
+            bytes, bytes: Information necessary to create a challenge proof.
         """
 
         spend_tx = self.child_chain.get_transaction(spending_tx_position)
-        (blknum, _, _) = decode_utxo_position(spending_tx_position)
-        block = self.child_chain.blocks[blknum]
-        proof = block.merkle.create_membership_proof(spend_tx.encoded)
-        signatures = b''.join(spend_tx.signatures)
-        confirmation_signatures = b''.join(spend_tx.confirmations)
-        return (spend_tx.encoded, proof, signatures, confirmation_signatures)
+        (_, _, oindex) = decode_utxo_position(spending_tx_position)
+        confirmation_signature = spend_tx.confirmations[oindex]
+        return (spend_tx.encoded, confirmation_signature)
 
     def process_exits(self):
         """Processes any exits that have completed the exit period"""

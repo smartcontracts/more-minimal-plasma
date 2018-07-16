@@ -45,8 +45,8 @@ def test_challenge_exit_should_succeed(testlang):
 
     # Check that the exit was removed
     plasma_exit = testlang.get_plasma_exit(deposit_utxo_position)
-    assert plasma_exit.owner == NULL_ADDRESS_HEX
-    assert plasma_exit.amount == 0
+    assert plasma_exit.owner == NULL_ADDRESS_HEX  # address is removed
+    assert plasma_exit.amount == amount  # amount is not removed
 
 
 def test_challenge_exit_invalid_tx_should_fail(testlang):
@@ -54,71 +54,20 @@ def test_challenge_exit_invalid_tx_should_fail(testlang):
 
     # Exit should fail
     encoded_tx = testlang.child_chain.get_transaction(exiting_utxo_position).encoded  # Using the wrong tx
-    (_, proof, signatures, confirmation_signatures) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
+    (_, confirmation_signature) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
     with pytest.raises(TransactionFailed):
         testlang.root_chain.challengeExit(exiting_utxo_position,
-                                          spending_utxo_position,
                                           encoded_tx,
-                                          proof,
-                                          signatures,
-                                          confirmation_signatures)
-
-
-def test_challenge_exit_invalid_tx_position_should_fail(testlang):
-    (exiting_utxo_position, spending_utxo_position) = start_exit_spend(testlang)
-
-    # Exit should fail
-    encoded_tx = testlang.child_chain.get_transaction(exiting_utxo_position).encoded  # Using the wrong tx
-    (_, proof, signatures, confirmation_signatures) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
-    with pytest.raises(TransactionFailed):
-        testlang.root_chain.challengeExit(exiting_utxo_position,
-                                          spending_utxo_position,
-                                          encoded_tx,
-                                          proof,
-                                          signatures,
-                                          confirmation_signatures)
-
-
-def test_challenge_exit_invalid_proof_should_fail(testlang):
-    (exiting_utxo_position, spending_utxo_position) = start_exit_spend(testlang)
-
-    # Exit should fail
-    proof = b''  # Using empty proof
-    (encoded_tx, _, signatures, confirmation_signatures) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
-    with pytest.raises(TransactionFailed):
-        testlang.root_chain.challengeExit(exiting_utxo_position,
-                                          spending_utxo_position,
-                                          encoded_tx,
-                                          proof,
-                                          signatures,
-                                          confirmation_signatures)
-
-
-def test_challenge_exit_invalid_signatures_should_fail(testlang):
-    (exiting_utxo_position, spending_utxo_position) = start_exit_spend(testlang)
-
-    # Exit should fail
-    signatures = b''  # Using empty signatures
-    (encoded_tx, proof, _, confirmation_signatures) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
-    with pytest.raises(TransactionFailed):
-        testlang.root_chain.challengeExit(exiting_utxo_position,
-                                          spending_utxo_position,
-                                          encoded_tx,
-                                          proof,
-                                          signatures,
-                                          confirmation_signatures)
+                                          confirmation_signature)
 
 
 def test_challenge_exit_invalid_confirmation_signatures_should_fail(testlang):
     (exiting_utxo_position, spending_utxo_position) = start_exit_spend(testlang)
 
     # Exit should fail
-    confirmation_signatures = b''  # Using empty confirmation signatures
-    (encoded_tx, proof, signatures, _) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
+    confirmation_signature = b''  # Using empty confirmation signatures
+    (encoded_tx, _) = testlang.get_challenge_proof(exiting_utxo_position, spending_utxo_position)
     with pytest.raises(TransactionFailed):
         testlang.root_chain.challengeExit(exiting_utxo_position,
-                                          spending_utxo_position,
                                           encoded_tx,
-                                          proof,
-                                          signatures,
-                                          confirmation_signatures)
+                                          confirmation_signature)
