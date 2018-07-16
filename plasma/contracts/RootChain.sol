@@ -93,8 +93,11 @@ contract RootChain {
 
     function deposit(bytes _encodedDepositTx) public payable {
         PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedDepositTx);
-        //checks that the outputs of the transaction are correct
+
+        // First output should be the value of this transaction.
         require(transaction.outputs[0].amount == msg.value);
+
+        // Second output should be unused.
         require(transaction.outputs[1].amount == 0);
 
         plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
@@ -129,17 +132,24 @@ contract RootChain {
 
         PlasmaCore.TransactionOutput memory transactionOutput = PlasmaCore.decodeTx(_encodedTx).outputs[outputIndex];
 
+        // Only the output owner should be able to start an exit.
         require(transactionOutput.owner == msg.sender);
 
-        PlasmaBlockRoot memory plasmaBlockRoot = plasmaBlockRoots[blockNumber];
-        bytes32 txHash = keccak256(_encodedTx);
-
-        require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
-        require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
+        // Don't allow zero-value outputs to exit.
         require(transactionOutput.amount > 0);
+
+        // Check that this UTXO hasn't already started an exit.
         require(plasmaExits[_utxoPosition].amount == 0);
 
+        // Validate the transaction.
+        PlasmaBlockRoot memory plasmaBlockRoot = plasmaBlockRoots[blockNumber];
+        bytes32 txHash = keccak256(_encodedTx);
+        require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
+        require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
+
+        // Must wait at least one week (> 1 week old UTXOs), but might wait up to two weeks (< 1 week old UTXOs).
         uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
+
         exitQueue.insert(exitableAt, _utxoPosition);
         plasmaExits[_utxoPosition] = PlasmaExit({
             owner: transactionOutput.owner,
