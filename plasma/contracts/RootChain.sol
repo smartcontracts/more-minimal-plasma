@@ -92,6 +92,11 @@ contract RootChain {
      */
 
     function deposit(bytes _encodedDepositTx) public payable {
+        PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedDepositTx);
+        //checks that the outputs of the transaction are correct
+        require(transaction.outputs[0].amount == msg.value);
+        require(transaction.outputs[1].amount == 0);
+
         plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
             root: PlasmaCore.getDepositRoot(_encodedDepositTx, TREE_HEIGHT),
             timestamp: block.timestamp
