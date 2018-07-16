@@ -1,5 +1,6 @@
 pragma solidity ^0.4.0;
 
+import "./Math.sol";
 import "./Merkle.sol";
 import "./PlasmaCore.sol";
 import "./PriorityQueue.sol";
@@ -82,6 +83,7 @@ contract RootChain {
     constructor() public {
         operator = msg.sender;
         currentPlasmaBlockNumber = 1;
+        exitQueue = new PriorityQueue();
     }
 
 
@@ -120,22 +122,18 @@ contract RootChain {
         uint256 txIndex = PlasmaCore.getTxIndex(_utxoPosition);
         uint256 outputIndex = PlasmaCore.getOutputIndex(_utxoPosition);
 
-        PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedTx);
-        transactionOutput = transaction.outputs[outputIndex];
+        PlasmaCore.TransactionOutput memory transactionOutput = PlasmaCore.decodeTx(_encodedTx).outputs[outputIndex];
 
         require(transactionOutput.owner == msg.sender);
 
-        bytes32 plasmaBlockRoot = plasmaBlockRoots[blockNumber].root;
+        PlasmaBlockRoot memory plasmaBlockRoot = plasmaBlockRoots[blockNumber];
         bytes32 txHash = keccak256(_encodedTx);
 
-        require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot, _txInclusionProof));
-        require(validateSignatures(txHash, _txSignatures, _txConfirmationSignatures);
+        require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
+        require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
 
-        // add to priority queue
         uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
-
         exitQueue.insert(exitableAt, _utxoPosition);
-
         plasmaExits[_utxoPosition] = PlasmaExit({
             owner: transactionOutput.owner,
             amount: transactionOutput.amount
