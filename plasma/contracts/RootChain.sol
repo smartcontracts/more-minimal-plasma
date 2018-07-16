@@ -144,32 +144,30 @@ contract RootChain {
         emit ExitStarted(msg.sender, _utxoPosition, transactionOutput.amount);
     }
 
-
-
     function challengeExit(
         uint256 _exitingUtxoPosition,
-        uint256 _spendingTxPosition,
         bytes _encodedSpendingTx,
         bytes _spendingTxConfirmationSignature
-
     ) public {
         PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedSpendingTx);
+
+        // Check that the exiting UTXO was actually spent.
         bool spendsExitingUtxo = false;
         for (uint8 i = 0; i < transaction.inputs.length; i++) {
             if (_exitingUtxoPosition == PlasmaCore.getInputPosition(transaction.inputs[i])) {
-                spendsExitingUtxo = True;
+                spendsExitingUtxo = true;
                 break;
             }
         }
         require(spendsExitingUtxo);
 
         // Validate the confirmation signature.
-        bytes confirmationHash = keccak256(keccak256(_encodedSpendingTx));
-        address owner = exits[_exitingUtxoPosition].owner;
-        require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignatures));
+        bytes32 confirmationHash = keccak256(abi.encodePacked(keccak256(_encodedSpendingTx)));
+        address owner = plasmaExits[_exitingUtxoPosition].owner;
+        require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignature));
 
         // Delete the owner but keep the amount to prevent double exits.
-        delete exits[_exitingUtxoPosition].owner;
+        delete plasmaExits[_exitingUtxoPosition].owner;
     }
 
     function processExits() public {

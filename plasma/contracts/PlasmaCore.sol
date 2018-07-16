@@ -98,8 +98,16 @@ library PlasmaCore {
         return uint8(_utxoPosition % TX_OFFSET);
     }
 
+    function encodeUtxoPosition(
+        uint256 _blockNumber,
+        uint256 _txIndex,
+        uint256 _outputIndex
+    ) internal pure returns (uint256) {
+        return (_blockNumber * BLOCK_OFFSET) + (_txIndex * TX_OFFSET) + (_outputIndex * 1);
+    }
+
     function getInputPosition(TransactionInput memory _txInput) internal pure returns (uint256) {
-        return (_txInput.blknum * BLOCK_OFFSET) + (_txInput.txindex * TX_OFFSET) + (_txInput * 1);
+        return encodeUtxoPosition(_txInput.blknum, _txInput.txindex, _txInput.oindex); 
     }
 
     /**
