@@ -121,17 +121,29 @@ contract RootChain {
         uint256 outputIndex = PlasmaCore.getOutputIndex(_utxoPosition);
 
         PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedTx);
-        require(transaction.outputs[outputIndex].owner == msg.sender);
+        transactionOutput = transaction.outputs[outputIndex];
+
+        require(transactionOutput.owner == msg.sender);
 
         bytes32 plasmaBlockRoot = plasmaBlockRoots[blockNumber].root;
-        require(Merkle.checkMembership(keccak256(_encodedTx), txIndex, plasmaBlockRoot, _txInclusionProof));
+        bytes32 txHash = keccak256(_encodedTx);
 
+        require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot, _txInclusionProof));
+        require(validateSignatures(txHash, _txSignatures, _txConfirmationSignatures);
 
-        // TODO: valid the signatures(??)
-        // TODO: put the exit in the exit queue
+        // add to priority queue
+        uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
 
-        emit ExitStarted(msg.sender, _utxoPosition, 123);
+        exitQueue.insert(exitableAt, _utxoPosition);
+
+        plasmaExits[_utxoPosition] = PlasmaExit({
+            owner: transactionOutput.owner,
+            amount: transactionOutput.amount
+        });
+
+        emit ExitStarted(msg.sender, _utxoPosition, transactionOutput.amount);
     }
+
 
     function challengeExit(
         uint256 _exitingUtxoPosition,
