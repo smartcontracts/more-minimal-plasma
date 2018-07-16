@@ -145,15 +145,31 @@ contract RootChain {
     }
 
 
+
     function challengeExit(
         uint256 _exitingUtxoPosition,
         uint256 _spendingTxPosition,
         bytes _encodedSpendingTx,
-        bytes _spendingTxInclusionProof,
-        bytes _spendingTxSignatures,
-        bytes _spendingTxConfirmationSignatures
-    ) public {
+        bytes _spendingTxConfirmationSignature
 
+    ) public {
+        PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedSpendingTx);
+        bool spendsExitingUtxo = false;
+        for (uint8 i = 0; i < transaction.inputs.length; i++) {
+            if (_exitingUtxoPosition == PlasmaCore.getInputPosition(transaction.inputs[i])) {
+                spendsExitingUtxo = True;
+                break;
+            }
+        }
+        require(spendsExitingUtxo);
+
+        // Validate the confirmation signature.
+        bytes confirmationHash = keccak256(keccak256(_encodedSpendingTx));
+        address owner = exits[_exitingUtxoPosition].owner;
+        require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignatures));
+
+        // Delete the owner but keep the amount to prevent double exits.
+        delete exits[_exitingUtxoPosition].owner;
     }
 
     function processExits() public {
