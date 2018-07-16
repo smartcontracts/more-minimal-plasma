@@ -155,42 +155,34 @@ contract RootChain {
     }
 
     /*
-    * Assumes that only ETH tokens will be used. This function then checks that the timestamp that the transaction can exit at has to be before the time now.
+    * Assumes that only ETH tokens will be used.
     */
     function processExits()
         public
     {
-        uint256 utxoPos;
-        uint256 exitable_at;
-        (utxoPos, exitable_at) = getNextExit();
-        PlasmaExit memory currentExit = plasmaExits[utxoPos];
+        uint256 exitableAt;
+        uint256 utxoPosition;
 
-        while(exitable_at < block.timestamp){
-            currentExit = plasmaExits[utxoPos];
-            currentExit.owner.transfer(currentExit.amount);
-            exitQueue.delMin();
+        //iterates through priorityQueue
+        while(exitQueue.currentSize() > 0){
 
-            //Delete owner but keep amount to prevent another exit with the same utxoPos
-            delete plasmaExits[utxoPos].owner;
-            if (exitQueue.currentSize() > 0){
-                (utxoPos, exitable_at) = getNextExit();
-            } else {
-                return;
+            (exitableAt, utxoPosition) = exitQueue.getMin();
+
+            if (exitableAt > block.timestamp){
+                return ;
             }
+            PlasmaExit memory currentExit = plasmaExits[utxoPosition];
+
+            //If an exit was challenged, challengeExit would delete the owner but not the amount from the priorityQueue.
+            if (currentExit.owner != address(0)){
+                currentExit.owner.transfer(currentExit.amount);
+                //Delete owner but keep amount to prevent another exit with the same utxoPos
+                delete plasmaExits[utxoPosition].owner;
+            }
+
+            exitQueue.delMin();
         }
 
-    }
-    /*
-    *We get the exit with the highest priority in the queue and split it because each exit is a concatenation of utxopos and timestamp.
-    */
-    function getNextExit()
-        public
-        view
-        returns (uint256, uint256)
-    {
-        uint256 highestPriority = exitQueue.getMin();
-        uint256 utxoPos = uint256(uint128(highestPriority));
-        uint256 exitable_at = highestPriority>>128;
-        return (utxoPos, exitable_at);
+
     }
 }

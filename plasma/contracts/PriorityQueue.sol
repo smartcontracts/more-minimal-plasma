@@ -21,7 +21,7 @@ contract PriorityQueue {
     }
 
 
-    /* 
+    /*
      *  Storage
      */
 
@@ -62,14 +62,14 @@ contract PriorityQueue {
         percUp(currentSize);
     }
 
-    function delMin() public onlyOwner returns (uint256) {
+    function delMin() public onlyOwner returns (uint256, uint256) {
         QueueItem memory retItem = heapList[1];
         replaceItem(1, heapList[currentSize]);
         delete heapList[currentSize];
         currentSize = currentSize.sub(1);
         percDown(1);
         heapList.length = heapList.length.sub(1);
-        return retItem.value;
+        return (retItem.priority, retItem.value);
     }
 
     function minChild(uint256 i) public view returns (uint256) {
@@ -84,8 +84,8 @@ contract PriorityQueue {
         }
     }
 
-    function getMin() public view returns (uint256) {
-        return heapList[1].value;
+    function getMin() public view returns (uint256, uint256) {
+        return (heapList[1].priority, heapList[1].value);
     }
 
 
@@ -120,7 +120,7 @@ contract PriorityQueue {
             replaceItem(i, newVal);
         }
     }
-    
+
     function replaceItem(uint256 _i, QueueItem memory _item) private {
         heapList[_i] = QueueItem({
             priority: _item.priority,
