@@ -131,6 +131,8 @@ contract RootChain {
 
         require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
         require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
+        require(transactionOutput.amount > 0);
+        require(plasmaExits[_utxoPosition].amount == 0);
 
         uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
         exitQueue.insert(exitableAt, _utxoPosition);
