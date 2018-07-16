@@ -156,35 +156,30 @@ contract RootChain {
 
     }
 
-    /*
-    * Assumes that only ETH tokens will be used.
-    */
-    function processExits()
-        public
-    {
+    function processExits() public {
         uint256 exitableAt;
         uint256 utxoPosition;
 
-        //iterates through priorityQueue
+        // Iterate while the queue is not empty.
         while(exitQueue.currentSize() > 0){
-
             (exitableAt, utxoPosition) = exitQueue.getMin();
 
+            // Check if this exit has finished its challenge period.
             if (exitableAt > block.timestamp){
-                return ;
+                return;
             }
+
             PlasmaExit memory currentExit = plasmaExits[utxoPosition];
 
-            //If an exit was challenged, challengeExit would delete the owner but not the amount from the priorityQueue.
+            // If an exit was successfully challenged, owner would be address(0).
             if (currentExit.owner != address(0)){
                 currentExit.owner.transfer(currentExit.amount);
-                //Delete owner but keep amount to prevent another exit with the same utxoPos
+
+                // Delete owner but keep amount to prevent another exit from the same UTXO.
                 delete plasmaExits[utxoPosition].owner;
             }
 
             exitQueue.delMin();
         }
-
-
     }
 }

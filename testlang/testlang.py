@@ -192,7 +192,7 @@ class TestingLanguage(object):
     def process_exits(self):
         """Processes any exits that have completed the exit period"""
 
-        self.root_chain.processExits(NULL_ADDRESS)
+        self.root_chain.processExits()
 
     def get_plasma_block(self, blknum):
         """Queries a plasma block by its number.
