@@ -1,5 +1,7 @@
 pragma solidity ^0.4.0;
 
+import "./ECRecovery.sol";
+import "./ByteUtils.sol";
 import "./RLP.sol";
 
 
@@ -45,7 +47,7 @@ library PlasmaCore {
      * @param _tx RLP encoded transaction.
      * @return Decoded transaction.
      */
-    function decode(bytes memory _tx) internal pure returns (Transaction) {
+    function decodeTx(bytes memory _tx) internal pure returns (Transaction) {
         RLP.RLPItem[] memory txList = _tx.toRLPItem().toList();
         RLP.RLPItem[] memory inputs = txList[0].toList();
         RLP.RLPItem[] memory outputs = txList[1].toList();
@@ -74,7 +76,7 @@ library PlasmaCore {
      * @param _utxoPosition UTXO position to decode.
      * @return The output's block number.
      */
-    function getBlknum(uint256 _utxoPosition) internal pure returns (uint256) {
+    function getBlockNumber(uint256 _utxoPosition) internal pure returns (uint256) {
         return _utxoPosition / BLOCK_OFFSET;
     }
 
@@ -83,7 +85,7 @@ library PlasmaCore {
      * @param _utxoPosition UTXO position to decode.
      * @return The output's transaction index.
      */
-    function getTxindex(uint256 _utxoPosition) internal pure returns (uint256) {
+    function getTxIndex(uint256 _utxoPosition) internal pure returns (uint256) {
         return (_utxoPosition % BLOCK_OFFSET) / TX_OFFSET;
     }
 
@@ -92,7 +94,7 @@ library PlasmaCore {
      * @param _utxoPosition UTXO position to decode.
      * @return The output's index.
      */
-    function getOindex(uint256 _utxoPosition) internal pure returns (uint8) {
+    function getOutputIndex(uint256 _utxoPosition) internal pure returns (uint8) {
         return uint8(_utxoPosition % TX_OFFSET);
     }
 
@@ -112,14 +114,20 @@ library PlasmaCore {
         return root;
     }
 
-    function validateSignatures(bytes32 _txHash, bytes _signatures, bytes _confirmationSignatures) returns (bool) {
+    function validateSignatures(
+        bytes32 _txHash,
+        bytes _signatures,
+        bytes _confirmationSignatures
+    ) internal pure returns (bool) {
         require(_signatures.length % 65 == 0);
         require(_signatures.length == _confirmationSignatures.length);
 
-        for (uint256 offset = 0; offset < signatures.length; offset += 65) {
+        for (uint256 offset = 0; offset < _signatures.length; offset += 65) {
             bytes memory signature = ByteUtils.slice(_signatures, offset, 65);
             bytes memory confirmationSigature = ByteUtils.slice(_confirmationSignatures, offset, 65);
-            if (ECRecovery.recover(_txHash, signature) != ECRecovery.recover(keccak256(_txHash, confirmationSigature)) {
+            bytes32 confirmationHash = keccak256(abi.encodePacked(_txHash));
+
+            if (ECRecovery.recover(_txHash, signature) != ECRecovery.recover(confirmationHash, confirmationSigature)) {
                 return false;
             }
         }
