@@ -1,0 +1,2 @@
+class BaseServce(object):
+    pass

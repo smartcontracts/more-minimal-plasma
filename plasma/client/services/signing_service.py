@@ -1,5 +1,5 @@
 from .base_service import BaseServce
 
 
-class EthService(BaseServce):
+class SigningService(BaseServce):
     pass
