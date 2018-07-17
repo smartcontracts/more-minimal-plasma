@@ -1,5 +1,5 @@
-from .base_service import BaseServce
+from .base_service import BaseService
 
 
-class EventListenerService(BaseServce):
+class EventListenerService(BaseService):
     pass

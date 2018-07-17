@@ -1,2 +1,2 @@
-class BaseServce(object):
+class BaseService(object):
     pass

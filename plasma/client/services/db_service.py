@@ -1,5 +1,5 @@
-from .base_service import BaseServce
+from .base_service import BaseService
 
 
-class DBService(BaseServce):
+class DBService(BaseService):
     pass

@@ -1,5 +1,5 @@
-from .base_service import BaseServce
+from .base_service import BaseService
 
 
-class EthService(BaseServce):
+class EthService(BaseService):
     pass

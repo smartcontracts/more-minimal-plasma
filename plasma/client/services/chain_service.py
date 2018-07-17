@@ -1,5 +1,5 @@
-from .base_service import BaseServce
+from .base_service import BaseService
 
 
-class ChainService(BaseServce):
+class ChainService(BaseService):
     pass
