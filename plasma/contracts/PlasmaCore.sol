@@ -98,6 +98,13 @@ library PlasmaCore {
         return uint8(_utxoPosition % TX_OFFSET);
     }
 
+    /**
+     * @dev Encodes a UTXO position.
+     * @param _blockNumber Block in which the transaction was created.
+     * @param _txIndex Index of the transaction inside the block.
+     * @param _outputIndex Which output is being referenced.
+     * @return The encoded UTXO position.
+     */
     function encodeUtxoPosition(
         uint256 _blockNumber,
         uint256 _txIndex,
@@ -106,6 +113,11 @@ library PlasmaCore {
         return (_blockNumber * BLOCK_OFFSET) + (_txIndex * TX_OFFSET) + (_outputIndex * 1);
     }
 
+    /**
+     * @dev Returns the encoded UTXO position for a given input.
+     * @param _txInput Transaction input to encode.
+     * @return The encoded UTXO position.
+     */
     function getInputPosition(TransactionInput memory _txInput) internal pure returns (uint256) {
         return encodeUtxoPosition(_txInput.blknum, _txInput.txindex, _txInput.oindex); 
     }
@@ -126,19 +138,29 @@ library PlasmaCore {
         return root;
     }
 
+    /**
+     * @dev Validates signatures on a transaction.
+     * @param _txHash Hash of the transaction to be validated.
+     * @param _signatures Signatures over the hash of the transaction.
+     * @param _confirmationSignatures Signatures attesting that the transaction is in a valid block.
+     * @return True if the signatures are valid, false otherwise.
+     */
     function validateSignatures(
         bytes32 _txHash,
         bytes _signatures,
         bytes _confirmationSignatures
     ) internal pure returns (bool) {
+        // Check that the signature lengths are correct.
         require(_signatures.length % 65 == 0);
         require(_signatures.length == _confirmationSignatures.length);
 
         for (uint256 offset = 0; offset < _signatures.length; offset += 65) {
+            // Slice off one signature at a time.
             bytes memory signature = ByteUtils.slice(_signatures, offset, 65);
             bytes memory confirmationSigature = ByteUtils.slice(_confirmationSignatures, offset, 65);
-            bytes32 confirmationHash = keccak256(abi.encodePacked(_txHash));
 
+            // Check that the signatures match.
+            bytes32 confirmationHash = keccak256(abi.encodePacked(_txHash));
             if (ECRecovery.recover(_txHash, signature) != ECRecovery.recover(confirmationHash, confirmationSigature)) {
                 return false;
             }
