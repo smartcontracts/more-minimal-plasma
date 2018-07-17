@@ -39,6 +39,21 @@ def test_start_exit_from_deposit_should_succeed(testlang):
     assert plasma_exit.amount == amount
 
 
+def test_start_exit_twice_should_fail(testlang):
+    owner, amount = testlang.accounts[0], 100
+
+    # Create a deposit
+    deposit_blknum = testlang.deposit(owner, amount)
+    deposit_utxo_position = encode_utxo_position(deposit_blknum, 0, 0)
+
+    # Start an exit
+    testlang.start_exit(owner, deposit_utxo_position)
+
+    # Try to start a second exit
+    with pytest.raises(TransactionFailed):
+        testlang.start_exit(owner, deposit_utxo_position)
+
+
 def test_start_exit_wrong_position_should_fail(testlang):
     owner, amount = testlang.accounts[0], 100
 
