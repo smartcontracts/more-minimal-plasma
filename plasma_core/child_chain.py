@@ -7,7 +7,7 @@ from plasma_core.exceptions import (InvalidBlockSignatureException,
                                     TxAmountMismatchException)
 from plasma_core.transaction import Transaction
 from plasma_core.block import Block
-
+# from plasma.client.services.event_listener_service import EventListenerService
 
 class ChildChain(object):
     """Stores an immutable chain of Plasma blocks.
@@ -25,8 +25,11 @@ class ChildChain(object):
         self.parent_queue = {}
         self.current_plasma_block_number = 1
 
-        self.on('Deposit', self.apply_deposit)
-        self.on('ExitStarted', self.apply_exit)
+        #WHERE DOES ROOT CHAIN GET INSTANTIATED
+        # self.event_listener = EventListenerService(root_chain= , confirmations=0)
+        #
+        # self.event_listener.on('Deposit', self.apply_deposit)
+        # self.event_listener.on('ExitStarted', self.apply_exit)
         # self.on('PlasmaBlockRootCommitted', )
 
 
