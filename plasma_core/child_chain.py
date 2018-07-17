@@ -5,6 +5,8 @@ from plasma_core.exceptions import (InvalidBlockSignatureException,
                                     InvalidTxSignatureException,
                                     TxAlreadySpentException,
                                     TxAmountMismatchException)
+from plasma_core.transaction import Transaction
+from plasma_core.block import Block
 
 
 class ChildChain(object):
@@ -22,6 +24,54 @@ class ChildChain(object):
         self.blocks = {}
         self.parent_queue = {}
         self.current_plasma_block_number = 1
+
+        self.on('Deposit', self.apply_deposit)
+        self.on('ExitStarted', self.apply_exit)
+        # self.on('PlasmaBlockRootCommitted', )
+
+
+    def apply_deposit(self, event):
+        """ Creates the initial transaction based on the deposit on the root chain and stores it as a block
+
+        Attributes:
+            events (Event): 'Deposit' event being emitted
+        """
+
+        event_args = event['args']
+
+        depositor = event_args['owner']
+        amount = event_args['amount']
+        blknum = event_args['depositBlock']
+
+        # inputs would be default inputs as specified in Transaction
+        depositTx = Transaction(
+            ouputs=[(depositor, amount), (NULL_ADDRESS, 0)]
+        )
+
+        depositBlock = Block([depositTx])
+        self.blocks[blknum] = depositBlock
+
+    def apply_exit(self, event):
+        """
+
+        Attributes:
+            events (Event): 'ExitStarted' event being emitted
+        """
+        event_args = event['args']
+        utxoPos = event_args['utxoPos']
+        self.mark_utxo_spent(*self.unpack_utxo_pos(utxoPos))
+
+    def mark_utxo_spent(self, blknum, txindex, oindex):
+        if blknum == 0:
+            return
+        self.blocks[blknum].transactions[txindex].spent[oindex] = True
+
+    # to abstract out into util module
+    def unpack_utxo_pos(utxo_pos):
+        blknum = utxo_pos // 1000000000
+        txindex = (utxo_pos % 1000000000) // 10000
+        oindex = utxo_pos - blknum * 1000000000 - txindex * 10000
+        return (blknum, txindex, oindex)
 
     def add_block(self, block):
         """Adds a block to the chain of blocks if it's valid.

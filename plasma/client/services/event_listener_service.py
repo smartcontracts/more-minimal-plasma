@@ -28,8 +28,9 @@ class EventListenerService(BaseServce):
         self.active_events = {}
         self.subscribers = {}
 
-        self.__listen_for_event('Deposit')
+        self.__listen_for_event('DepositCreated')
         self.__listen_for_event('ExitStarted')
+        # self.__listen_for_event('PlasmaBlockRootCommitted')
 
     def on(self, event_name, event_handler):
         """Registers an event handler to an event by name.
