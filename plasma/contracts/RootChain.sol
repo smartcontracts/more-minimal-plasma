@@ -91,6 +91,10 @@ contract RootChain {
      * Public functions
      */
 
+    /**
+     * @dev Allows a user to deposit into the Plasma chain.
+     * @param _encodedDepositTx RLP encoded deposit transaction to be inserted into a block.
+     */
     function deposit(bytes _encodedDepositTx) public payable {
         PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedDepositTx);
 
@@ -109,6 +113,10 @@ contract RootChain {
         currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
+    /**
+     * @dev Allows the operator to commit a block root to Ethereum.
+     * @param _root Root to be committed.
+     */
     function commitPlasmaBlockRoot(bytes32 _root) public onlyOperator {
         plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
             root: _root,
@@ -119,6 +127,14 @@ contract RootChain {
         currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
     }
 
+    /**
+     * @dev Starts an exit for a given UTXO.
+     * @param _utxoPosition Position of the UTXO in the Plasma chain (based on block number, transaction index, output index)
+     * @param _encodedTx RLP encoded transaction that created the output.
+     * @param _txInclusionProof Proof that the transaction was included in the Plasma chain.
+     * @param _txSignatures Signatures that prove the transaction is valid.
+     * @param _txConfirmationSignatures Signatures that attest the transaction was included in a valid block.
+     */
     function startExit(
         uint256 _utxoPosition,
         bytes _encodedTx,
@@ -159,6 +175,12 @@ contract RootChain {
         emit ExitStarted(msg.sender, _utxoPosition, transactionOutput.amount);
     }
 
+    /**
+     * @dev Blocks an exiting UTXO by proving the UTXO was spent.
+     * @param _exitingUtxoPosition Position of the UTXO being exited.
+     * @param _encodedSpendingTx RLP encoded transaction that spent the UTXO.
+     * @param _spendingTxConfirmationSignature Confirmation signature over the spending transaction.
+     */
     function challengeExit(
         uint256 _exitingUtxoPosition,
         bytes _encodedSpendingTx,
@@ -185,6 +207,9 @@ contract RootChain {
         delete plasmaExits[_exitingUtxoPosition].owner;
     }
 
+    /**
+     * @dev Processes any exits that have completed the exit period.
+     */
     function processExits() public {
         uint256 exitableAt;
         uint256 utxoPosition;
