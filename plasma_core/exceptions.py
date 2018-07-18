@@ -1,22 +1,75 @@
-class NonexistentMemberException(Exception):
-    """raise when a leaf is not in the merkle tree"""
+class PlasmaError(Exception):
+    """
+    Base class for all Plasma errors.
+    """
+    pass
 
 
-class TxAlreadySpentException(Exception):
-    """the transaction is already spent"""
+class NonexistentMemberException(PlasmaError):
+    """
+    Raised when a specified leaf is not in a Merkle tree.
+    """
+    pass
 
 
-class InvalidTxSignatureException(Exception):
-    """the signature of a tx is invalid"""
+class TxAlreadySpentException(PlasmaError):
+    """
+    Raised when a transaction is already spent.
+    """
+    pass
 
 
-class InvalidBlockSignatureException(Exception):
-    """the signature of a block is invalid"""
+class InvalidTxSignatureException(PlasmaError):
+    """
+    Raised when a transaction signature is invalid.
+    """
+    pass
 
 
-class TxAmountMismatchException(Exception):
-    """tx input total amount is not equal to output total amount"""
+class InvalidBlockSignatureException(PlasmaError):
+    """
+    Raised when a block signature is invalid.
+    """
+    pass
 
 
-class InvalidBlockMerkleException(Exception):
-    """merkle tree of a block is invalid"""
+class TxAmountMismatchException(PlasmaError):
+    """
+    Raised when input amounts are less than output amounts.
+    """
+    pass
+
+
+class InvalidBlockMerkleException(PlasmaError):
+    """
+    Raised when a block tree is invalid.
+    """
+    pass
+
+
+class ValidationError(PlasmaError):
+    """
+    Raised when something does not pass a validation check.
+    """
+    pass
+
+
+class HeaderNotFound(PlasmaError):
+    """
+    Raised when a header for a specific block number is not found.
+    """
+    pass
+
+
+class CanonicalHeadNotFound(PlasmaError):
+    """
+    Raised when no canonical head is set for the chain.
+    """
+    pass
+
+
+class TransactionNotFound(PlasmaError):
+    """
+    Raised when a transaction cannot be found in the chain.
+    """
+    pass

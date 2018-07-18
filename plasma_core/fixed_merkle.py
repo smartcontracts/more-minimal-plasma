@@ -1,5 +1,5 @@
 from ethereum.utils import sha3
-from plasma_core.constants import NULL_HASH
+from plasma_core.constants import NULL_HASH32
 from .exceptions import NonexistentMemberException
 
 
@@ -38,7 +38,7 @@ class FixedMerkle(object):
             raise ValueError('too many leaves for the specified depth')
 
         hashed_leaves = [sha3(leaf) for leaf in leaves]
-        self.leaves = hashed_leaves + [sha3(NULL_HASH)] * (leaf_count - len(hashed_leaves))
+        self.leaves = hashed_leaves + [sha3(NULL_HASH32)] * (leaf_count - len(hashed_leaves))
         self.tree = [[Node(leaf) for leaf in self.leaves]]
         self._create_tree(self.tree[0])
 

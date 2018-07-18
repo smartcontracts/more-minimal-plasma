@@ -1,6 +1,6 @@
 import pytest
 from ethereum.tools.tester import TransactionFailed
-from plasma_core.constants import NULL_HASH
+from plasma_core.constants import NULL_HASH32
 from plasma_core.block import Block
 
 
@@ -26,6 +26,6 @@ def test_commit_plasma_block_root_not_operator_should_fail(testlang):
 
     # Check nothing was submitted
     plasma_block = testlang.get_plasma_block(1)
-    assert plasma_block.root == NULL_HASH
+    assert plasma_block.root == NULL_HASH32
     assert plasma_block.timestamp == 0
     assert testlang.current_plasma_block_number == 1
