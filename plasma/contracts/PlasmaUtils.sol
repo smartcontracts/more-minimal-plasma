@@ -6,10 +6,10 @@ import "./RLP.sol";
 
 
 /**
- * @title PlasmaCore
+ * @title PlasmaUtils
  * @dev Utilities for working with and decoding Plasma MVP transactions.
  */
-library PlasmaCore {
+library PlasmaUtils {
     using RLP for bytes;
     using RLP for RLP.RLPItem;
 

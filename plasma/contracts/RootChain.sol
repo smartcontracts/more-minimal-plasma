@@ -2,7 +2,7 @@ pragma solidity ^0.4.0;
 
 import "./Math.sol";
 import "./Merkle.sol";
-import "./PlasmaCore.sol";
+import "./PlasmaUtils.sol";
 import "./PriorityQueue.sol";
 
 
@@ -96,7 +96,7 @@ contract RootChain {
      * @param _encodedDepositTx RLP encoded deposit transaction to be inserted into a block.
      */
     function deposit(bytes _encodedDepositTx) public payable {
-        PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedDepositTx);
+        PlasmaUtils.Transaction memory transaction = PlasmaUtils.decodeTx(_encodedDepositTx);
 
         // First output should be the value of this transaction.
         require(transaction.outputs[0].amount == msg.value);
@@ -105,7 +105,7 @@ contract RootChain {
         require(transaction.outputs[1].amount == 0);
 
         plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
-            root: PlasmaCore.getDepositRoot(_encodedDepositTx, TREE_HEIGHT),
+            root: PlasmaUtils.getDepositRoot(_encodedDepositTx, TREE_HEIGHT),
             timestamp: block.timestamp
         });
 
@@ -142,11 +142,11 @@ contract RootChain {
         bytes _txSignatures,
         bytes _txConfirmationSignatures
     ) public payable onlyWithValue(EXIT_BOND) {
-        uint256 blockNumber = PlasmaCore.getBlockNumber(_utxoPosition);
-        uint256 txIndex = PlasmaCore.getTxIndex(_utxoPosition);
-        uint256 outputIndex = PlasmaCore.getOutputIndex(_utxoPosition);
+        uint256 blockNumber = PlasmaUtils.getBlockNumber(_utxoPosition);
+        uint256 txIndex = PlasmaUtils.getTxIndex(_utxoPosition);
+        uint256 outputIndex = PlasmaUtils.getOutputIndex(_utxoPosition);
 
-        PlasmaCore.TransactionOutput memory transactionOutput = PlasmaCore.decodeTx(_encodedTx).outputs[outputIndex];
+        PlasmaUtils.TransactionOutput memory transactionOutput = PlasmaUtils.decodeTx(_encodedTx).outputs[outputIndex];
 
         // Only the output owner should be able to start an exit.
         require(transactionOutput.owner == msg.sender);
@@ -161,7 +161,7 @@ contract RootChain {
         PlasmaBlockRoot memory plasmaBlockRoot = plasmaBlockRoots[blockNumber];
         bytes32 txHash = keccak256(_encodedTx);
         require(Merkle.checkMembership(txHash, txIndex, plasmaBlockRoot.root, _txInclusionProof));
-        require(PlasmaCore.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
+        require(PlasmaUtils.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures));
 
         // Must wait at least one week (> 1 week old UTXOs), but might wait up to two weeks (< 1 week old UTXOs).
         uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
@@ -186,12 +186,12 @@ contract RootChain {
         bytes _encodedSpendingTx,
         bytes _spendingTxConfirmationSignature
     ) public {
-        PlasmaCore.Transaction memory transaction = PlasmaCore.decodeTx(_encodedSpendingTx);
+        PlasmaUtils.Transaction memory transaction = PlasmaUtils.decodeTx(_encodedSpendingTx);
 
         // Check that the exiting UTXO was actually spent.
         bool spendsExitingUtxo = false;
         for (uint8 i = 0; i < transaction.inputs.length; i++) {
-            if (_exitingUtxoPosition == PlasmaCore.getInputPosition(transaction.inputs[i])) {
+            if (_exitingUtxoPosition == PlasmaUtils.getInputPosition(transaction.inputs[i])) {
                 spendsExitingUtxo = true;
                 break;
             }
