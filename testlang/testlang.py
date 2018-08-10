@@ -17,9 +17,10 @@ class PlasmaExit(object):
         amount (int): How much value is being exited.
     """
 
-    def __init__(self, owner, amount):
+    def __init__(self, owner, amount, is_valid):
         self.owner = owner
         self.amount = amount
+        self.is_valid = is_valid
 
 
 class PlasmaBlock(object):
@@ -89,7 +90,7 @@ class TestingLanguage(object):
 
         deposit_tx = Transaction(inputs=[], outputs=[(owner.address, amount)])
         blknum = self.root_chain.currentPlasmaBlockNumber()
-        self.root_chain.deposit(deposit_tx.encoded, value=amount, sender=owner.key)
+        self.root_chain.deposit(value=amount, sender=owner.key)
 
         block = Block(transactions=[deposit_tx], number=blknum)
         self.child_chain.add_block(block)
@@ -137,7 +138,7 @@ class TestingLanguage(object):
         """
 
         bond = self.root_chain.EXIT_BOND()
-        self.root_chain.startExit(utxo_position, *self.get_exit_proof(utxo_position), sender=owner.key, value=bond)
+        self.root_chain.startExit(*decode_utxo_position(utxo_position), *self.get_exit_proof(utxo_position), sender=owner.key, value=bond)
 
     def get_exit_proof(self, utxo_position):
         """Returns information required to exit
@@ -155,9 +156,7 @@ class TestingLanguage(object):
         spend_tx = self.child_chain.get_transaction(utxo_position)
         encoded_tx = spend_tx.encoded
         proof = block.merkle.create_membership_proof(spend_tx.encoded)
-        signatures = spend_tx.joined_signatures
-        confirmation_signatures = spend_tx.joined_confirmations
-        return (encoded_tx, proof, signatures, confirmation_signatures)
+        return (encoded_tx, proof)
 
     def challenge_exit(self, exiting_utxo_position, spending_tx_position):
         """Challenges an exit with a double spend.
@@ -168,7 +167,7 @@ class TestingLanguage(object):
         """
 
         proof_data = self.get_challenge_proof(exiting_utxo_position, spending_tx_position)
-        self.root_chain.challengeExit(exiting_utxo_position, *proof_data)
+        self.root_chain.challengeExit(*decode_utxo_position(exiting_utxo_position), *proof_data)
 
     def get_challenge_proof(self, exiting_utxo_position, spending_tx_position):
         """Returns information required to submit a challenge.

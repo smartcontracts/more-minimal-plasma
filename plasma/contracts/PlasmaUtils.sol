@@ -2,7 +2,7 @@ pragma solidity ^0.4.0;
 
 import "./ECRecovery.sol";
 import "./ByteUtils.sol";
-import "./RLP.sol";
+import "./RLPDecode.sol";
 
 
 /**
@@ -10,8 +10,8 @@ import "./RLP.sol";
  * @dev Utilities for working with and decoding Plasma MVP transactions.
  */
 library PlasmaUtils {
-    using RLP for bytes;
-    using RLP for RLP.RLPItem;
+    using RLPDecode for bytes;
+    using RLPDecode for RLPDecode.RLPItem;
 
 
     /*
@@ -48,20 +48,20 @@ library PlasmaUtils {
      * @return Decoded transaction.
      */
     function decodeTx(bytes memory _tx) internal pure returns (Transaction) {
-        RLP.RLPItem[] memory txList = _tx.toRLPItem().toList();
-        RLP.RLPItem[] memory inputs = txList[0].toList();
-        RLP.RLPItem[] memory outputs = txList[1].toList();
+        RLPDecode.RLPItem[] memory txList = _tx.toRLPItem().toList();
+        RLPDecode.RLPItem[] memory inputs = txList[0].toList();
+        RLPDecode.RLPItem[] memory outputs = txList[1].toList();
 
         Transaction memory decodedTx;
         for (uint i = 0; i < 2; i++) {
-            RLP.RLPItem[] memory input = inputs[i].toList();
+            RLPDecode.RLPItem[] memory input = inputs[i].toList();
             decodedTx.inputs[i] = TransactionInput({
                 blknum: input[0].toUint(),
                 txindex: input[1].toUint(),
                 oindex: input[2].toUint()
             });
 
-            RLP.RLPItem[] memory output = outputs[i].toList();
+            RLPDecode.RLPItem[] memory output = outputs[i].toList();
             decodedTx.outputs[i] = TransactionOutput({
                 owner: output[0].toAddress(),
                 amount: output[1].toUint()
@@ -136,6 +136,15 @@ library PlasmaUtils {
             zeroHash = keccak256(abi.encodePacked(zeroHash, zeroHash));
         }
         return root;
+    }
+
+    /**
+     * @dev Creates an encoded deposit transaction for an owner and an amount.
+     * @param _owner Owner of the deposit.
+     * @param _amount Amount to be deposited.
+     */
+    function getDepositTransaction(address _owner, uint256 _amount) internal pure returns (bytes) {
+        return ""; // TODO
     }
 
     /**

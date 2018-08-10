@@ -15,19 +15,9 @@ def test_deposit_should_succeed(testlang):
     assert testlang.current_plasma_block_number == 2
 
 
-def test_deposit_invalid_value_should_fail(root_chain, ethtester):
-    owner, amount = ethtester.accounts[0], 100
+def test_deposit_zero_value_should_fail(root_chain, ethtester):
+    owner = ethtester.accounts[0]
 
-    # Submitting with a mismatched value should throw
-    deposit_tx = Transaction(inputs=[], outputs=[(owner.address, amount)])
+    # Submitting with zero value should fail
     with pytest.raises(TransactionFailed):
-        root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=0)
-
-
-def test_deposit_invalid_outputs_should_fail(root_chain, ethtester):
-    owner, amount = ethtester.accounts[0], 100
-
-    # Submitting with more than one output should throw
-    deposit_tx = Transaction(inputs=[], outputs=[(owner.address, amount), (owner.address, amount)])
-    with pytest.raises(TransactionFailed):
-        root_chain.deposit(deposit_tx.encoded, sender=owner.key, value=amount)
+        root_chain.deposit(sender=owner.key, value=0)
