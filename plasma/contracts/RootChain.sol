@@ -205,7 +205,7 @@ contract RootChain {
         }
         require(spendsExitingUtxo, "Transaction must spend exiting UTXO.");
 
-        // UTXOs are spent if the spending transaction was confirmed or is being exited.
+        // Check that the spending transaction was confirmed.
         bytes32 confirmationHash = keccak256(abi.encodePacked(keccak256(_encodedSpendingTx)));
         address owner = plasmaExits[exitingUtxoPosition].owner;
         require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignature), "Transaction must be confirmed.");
