@@ -128,11 +128,13 @@ def test_start_exit_wrong_tx_should_fail(testlang):
     # Start an exit
     bond = testlang.root_chain.EXIT_BOND()
     encoded_tx = testlang.child_chain.get_transaction(deposit_utxo_position).encoded  # Using wrong encoded tx
-    (_, proof) = testlang.get_exit_proof(spend_utxo_position)
+    (_, proof, signatures, confirmations) = testlang.get_exit_proof(spend_utxo_position)
     with pytest.raises(TransactionFailed):
         testlang.root_chain.startExit(*decode_utxo_position(spend_utxo_position),
                                       encoded_tx,
                                       proof,
+                                      signatures,
+                                      confirmations,
                                       value=bond)
 
 
@@ -150,9 +152,11 @@ def test_start_exit_invalid_proof_should_fail(testlang):
     # Start an exit
     bond = testlang.root_chain.EXIT_BOND()
     proof = b''  # Using empty proof
-    (encoded_tx, _) = testlang.get_exit_proof(spend_utxo_position)
+    (encoded_tx, _, signatures, confirmations) = testlang.get_exit_proof(spend_utxo_position)
     with pytest.raises(TransactionFailed):
         testlang.root_chain.startExit(*decode_utxo_position(spend_utxo_position),
                                       encoded_tx,
                                       proof,
+                                      signatures,
+                                      confirmations,
                                       value=bond)

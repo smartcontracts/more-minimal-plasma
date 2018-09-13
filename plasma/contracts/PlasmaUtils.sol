@@ -3,6 +3,7 @@ pragma solidity ^0.4.0;
 import "./ECRecovery.sol";
 import "./ByteUtils.sol";
 import "./RLPDecode.sol";
+import "./RLPEncode.sol";
 
 
 /**
@@ -10,6 +11,7 @@ import "./RLPDecode.sol";
  * @dev Utilities for working with and decoding Plasma MVP transactions.
  */
 library PlasmaUtils {
+    using RLPEncode for bytes;
     using RLPDecode for bytes;
     using RLPDecode for RLPDecode.RLPItem;
 
@@ -125,13 +127,12 @@ library PlasmaUtils {
     /**
      * @dev Calculates a deposit root given an encoded deposit transaction.
      * @param _encodedDepositTx RLP encoded deposit transaction.
-     * @param _treeHeight Height of the Merkle tree.
      * @return The deposit root.
      */
-    function getDepositRoot(bytes _encodedDepositTx, uint256 _treeHeight) internal pure returns (bytes32) {
-        bytes32 root = keccak256(_encodedDepositTx);
+    function getDepositRoot(bytes _encodedDepositTx) internal pure returns (bytes32) {
+        bytes32 root = keccak256(abi.encodePacked(_encodedDepositTx, new bytes(130)));
         bytes32 zeroHash = keccak256(abi.encodePacked(uint256(0)));
-        for (uint256 i = 0; i < _treeHeight; i++) {
+        for (uint256 i = 0; i < 10; i++) {
             root = keccak256(abi.encodePacked(root, zeroHash));
             zeroHash = keccak256(abi.encodePacked(zeroHash, zeroHash));
         }
@@ -142,9 +143,14 @@ library PlasmaUtils {
      * @dev Creates an encoded deposit transaction for an owner and an amount.
      * @param _owner Owner of the deposit.
      * @param _amount Amount to be deposited.
+     * @return RLP encoded deposit transaction.
      */
     function getDepositTransaction(address _owner, uint256 _amount) internal pure returns (bytes) {
-        return ""; // TODO
+        bytes memory inputs = "\xc8\xc3\x80\x80\x80\xc3\x80\x80\x80";
+        bytes memory secondOutput = "\xd6\x94\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80";
+        bytes memory firstOutput = RLPEncode.encodeList([RLPEncode.encodeAddress(_owner), RLPEncode.encodeUint(_amount)]);
+        bytes memory encodedTransaction = RLPEncode.encodeList([inputs, RLPEncode.encodeList([firstOutput, secondOutput])]);
+        return encodedTransaction;
     }
 
     /**
@@ -160,8 +166,8 @@ library PlasmaUtils {
         bytes _confirmationSignatures
     ) internal pure returns (bool) {
         // Check that the signature lengths are correct.
-        require(_signatures.length % 65 == 0);
-        require(_signatures.length == _confirmationSignatures.length);
+        require(_signatures.length % 65 == 0, "Invalid signature length.");
+        require(_signatures.length == _confirmationSignatures.length, "Mismatched signature count.");
 
         for (uint256 offset = 0; offset < _signatures.length; offset += 65) {
             // Slice off one signature at a time.

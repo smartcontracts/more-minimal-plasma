@@ -102,6 +102,11 @@ class Transaction(rlp.Serializable):
         self.spent = [False] * self.NUM_TXOS
 
     @property
+    def merkle_leaf_data(self):
+        """RLP encoding of this transaction concatenated with its signatures"""
+        return self.encoded + self.joined_signatures
+
+    @property
     def hash(self):
         """Hash of the RLP encoding of this transaction"""
         return utils.sha3(self.encoded)

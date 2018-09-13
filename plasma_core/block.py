@@ -45,7 +45,7 @@ class Block(rlp.Serializable):
     @property
     def merkle(self):
         """Merkle tree from the list of transactions"""
-        return FixedMerkle(10, [tx.encoded for tx in self.transactions])
+        return FixedMerkle(10, [tx.merkle_leaf_data for tx in self.transactions])
 
     @property
     def encoded(self):

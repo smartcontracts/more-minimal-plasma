@@ -11,8 +11,6 @@ import "./PriorityQueue.sol";
  * @dev Plasma Battleship root chain contract implementation.
  */
 contract RootChain {
-    using SafeMath for uint256;
-
     /*
      * Events
      */
@@ -46,10 +44,10 @@ contract RootChain {
     uint256 public currentPlasmaBlockNumber;
     address public operator;
 
-    mapping (uint256 => PlasmaBlockRoot) public plasmaBlockRoots;
+    mapping (uint256 => PlasmaBlock) public plasmaBlocks;
     mapping (uint256 => PlasmaExit) public plasmaExits;
 
-    struct PlasmaBlockRoot {
+    struct PlasmaBlock {
         bytes32 root;
         uint256 timestamp;
     }
@@ -57,6 +55,7 @@ contract RootChain {
     struct PlasmaExit {
         address owner;
         uint256 amount;
+        bool isStarted;
         bool isValid;
     }
 
@@ -97,15 +96,17 @@ contract RootChain {
     function deposit() public payable {
         require(msg.value > 0, "Deposit value must be greater than zero.");
 
+        // Generate the deposit transaction.
         bytes memory encodedDepositTx = PlasmaUtils.getDepositTransaction(msg.sender, msg.value);
 
-        plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
-            root: PlasmaUtils.getDepositRoot(encodedDepositTx, 10),
+        // Publish the new deposit block root.
+        plasmaBlocks[currentPlasmaBlockNumber] = PlasmaBlock({
+            root: PlasmaUtils.getDepositRoot(encodedDepositTx),
             timestamp: block.timestamp
         });
 
         emit DepositCreated(msg.sender, msg.value, currentPlasmaBlockNumber);
-        currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
+        currentPlasmaBlockNumber++;
     }
 
     /**
@@ -113,13 +114,13 @@ contract RootChain {
      * @param _root Root to be committed.
      */
     function commitPlasmaBlockRoot(bytes32 _root) public onlyOperator {
-        plasmaBlockRoots[currentPlasmaBlockNumber] = PlasmaBlockRoot({
+        plasmaBlocks[currentPlasmaBlockNumber] = PlasmaBlock({
             root: _root,
             timestamp: block.timestamp
         });
 
         emit PlasmaBlockRootCommitted(currentPlasmaBlockNumber, _root);
-        currentPlasmaBlockNumber = currentPlasmaBlockNumber.add(1);
+        currentPlasmaBlockNumber++;
     }
 
     /**
@@ -129,13 +130,17 @@ contract RootChain {
      * @param _utxoOutputIndex Output index of the UTXO being exited.
      * @param _encodedTx RLP encoded transaction that created the output.
      * @param _txInclusionProof Proof that the transaction was included in the Plasma chain.
+     * @param _txSignatures Signatures that validate the transaction that created the output.
+     * @param _txConfirmationSignatures Signatures that confirm the transaction that created the output.
      */
     function startExit(
         uint256 _utxoBlockNumber,
         uint256 _utxoTxIndex,
         uint256 _utxoOutputIndex,
         bytes _encodedTx,
-        bytes _txInclusionProof
+        bytes _txInclusionProof,
+        bytes _txSignatures,
+        bytes _txConfirmationSignatures
     ) public payable onlyWithValue(EXIT_BOND) {
         uint256 utxoPosition = PlasmaUtils.encodeUtxoPosition(_utxoBlockNumber, _utxoTxIndex, _utxoOutputIndex);
         PlasmaUtils.TransactionOutput memory transactionOutput = PlasmaUtils.decodeTx(_encodedTx).outputs[_utxoOutputIndex];
@@ -149,18 +154,23 @@ contract RootChain {
         // Check that this UTXO hasn't already started an exit.
         require(plasmaExits[utxoPosition].amount == 0, "Exit must not already exist.");
 
-        // Check the transaction is included in the chain.
-        PlasmaBlockRoot memory plasmaBlockRoot = plasmaBlockRoots[_utxoBlockNumber];
+        // Check transaction signatures.
         bytes32 txHash = keccak256(_encodedTx);
-        require(Merkle.checkMembership(txHash, _utxoTxIndex, plasmaBlockRoot.root, _txInclusionProof), "Transaction must be in block.");
+        require(PlasmaUtils.validateSignatures(txHash, _txSignatures, _txConfirmationSignatures), "Signatures must match.");
+
+        // Check the transaction is included in the chain.
+        PlasmaBlock memory plasmaBlock = plasmaBlocks[_utxoBlockNumber];
+        bytes32 merkleHash = keccak256(abi.encodePacked(_encodedTx, _txSignatures));
+        require(Merkle.checkMembership(merkleHash, _utxoTxIndex, plasmaBlock.root, _txInclusionProof), "Transaction must be in block.");
 
         // Must wait at least one week (> 1 week old UTXOs), but might wait up to two weeks (< 1 week old UTXOs).
-        uint256 exitableAt = Math.max(plasmaBlockRoot.timestamp + 2 weeks, block.timestamp + 1 weeks);
+        uint256 exitableAt = Math.max(plasmaBlock.timestamp + 2 weeks, block.timestamp + 1 weeks);
 
         exitQueue.insert(exitableAt, utxoPosition);
         plasmaExits[utxoPosition] = PlasmaExit({
             owner: transactionOutput.owner,
             amount: transactionOutput.amount,
+            isStarted: true,
             isValid: true
         });
 
@@ -193,12 +203,12 @@ contract RootChain {
                 break;
             }
         }
-        require(spendsExitingUtxo, "Transaction must spend exiting UTXO");
+        require(spendsExitingUtxo, "Transaction must spend exiting UTXO.");
 
-        // Validate the confirmation signature.
+        // UTXOs are spent if the spending transaction was confirmed or is being exited.
         bytes32 confirmationHash = keccak256(abi.encodePacked(keccak256(_encodedSpendingTx)));
         address owner = plasmaExits[exitingUtxoPosition].owner;
-        require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignature), "Transaction must be correctly signed");
+        require(owner == ECRecovery.recover(confirmationHash, _spendingTxConfirmationSignature), "Transaction must be confirmed.");
 
         // The exit is invalid.
         plasmaExits[exitingUtxoPosition].isValid = false;

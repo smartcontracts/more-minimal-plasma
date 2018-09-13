@@ -15,11 +15,14 @@ class PlasmaExit(object):
     Attributes:
         owner (str): Address of the exit's owner.
         amount (int): How much value is being exited.
+        is_started (bool): If the exit has been started.
+        is_valid (bool): If the exit is valid.
     """
 
-    def __init__(self, owner, amount, is_valid):
+    def __init__(self, owner, amount, is_started, is_valid):
         self.owner = owner
         self.amount = amount
+        self.is_started = is_started
         self.is_valid = is_valid
 
 
@@ -155,8 +158,10 @@ class TestingLanguage(object):
 
         spend_tx = self.child_chain.get_transaction(utxo_position)
         encoded_tx = spend_tx.encoded
-        proof = block.merkle.create_membership_proof(spend_tx.encoded)
-        return (encoded_tx, proof)
+        proof = block.merkle.create_membership_proof(spend_tx.merkle_leaf_data)
+        signatures = spend_tx.joined_signatures
+        confirmations = spend_tx.joined_confirmations
+        return (encoded_tx, proof, signatures, confirmations)
 
     def challenge_exit(self, exiting_utxo_position, spending_tx_position):
         """Challenges an exit with a double spend.
@@ -200,7 +205,7 @@ class TestingLanguage(object):
             PlasmaBlock: Formatted plasma block information.
         """
 
-        block_info = self.root_chain.plasmaBlockRoots(blknum)
+        block_info = self.root_chain.plasmaBlocks(blknum)
         return PlasmaBlock(*block_info)
 
     def get_plasma_exit(self, utxo_position):
