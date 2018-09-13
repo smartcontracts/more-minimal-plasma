@@ -145,14 +145,10 @@ contract RootChain {
         uint256 utxoPosition = PlasmaUtils.encodeUtxoPosition(_utxoBlockNumber, _utxoTxIndex, _utxoOutputIndex);
         PlasmaUtils.TransactionOutput memory transactionOutput = PlasmaUtils.decodeTx(_encodedTx).outputs[_utxoOutputIndex];
 
-        // Only the output owner should be able to start an exit.
-        require(transactionOutput.owner == msg.sender, "Output owner must be message sender.");
-
-        // Don't allow zero-value outputs to exit.
+        // Check that this exit is valid.
+        require(transactionOutput.owner == msg.sender, "Only output owner can withdraw this output.");
         require(transactionOutput.amount > 0, "Output value must be greater than zero.");
-
-        // Check that this UTXO hasn't already started an exit.
-        require(plasmaExits[utxoPosition].amount == 0, "Exit must not already exist.");
+        require(plasmaExits[utxoPosition].isStarted, "Exit must not already exist.");
 
         // Check transaction signatures.
         bytes32 txHash = keccak256(_encodedTx);
