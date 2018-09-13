@@ -148,7 +148,7 @@ contract RootChain {
         // Check that this exit is valid.
         require(transactionOutput.owner == msg.sender, "Only output owner can withdraw this output.");
         require(transactionOutput.amount > 0, "Output value must be greater than zero.");
-        require(plasmaExits[utxoPosition].isStarted, "Exit must not already exist.");
+        require(!plasmaExits[utxoPosition].isStarted, "Exit must not already exist.");
 
         // Check transaction signatures.
         bytes32 txHash = keccak256(_encodedTx);
