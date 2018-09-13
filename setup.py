@@ -7,12 +7,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='plasma-battleship',
+    name='more-minimal-plasma',
     version='0.0.1',
-    description='Battleship: Plasma Edition',
+    description='Minimal Viable Plasma: Made More Minimal',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/kfichter/plasma-battleship',
+    url='https://github.com/kfichter/more-minimal-plasma',
     author='ic3bootcamp',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -20,7 +20,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Programming Language :: Python :: 3'
     ],
-    keywords='plasma contracts ethereum battleship solidity',
+    keywords='plasma contracts ethereum minimal solidity',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     install_requires=[
         'ethereum==2.3.0',

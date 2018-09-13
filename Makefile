@@ -35,4 +35,5 @@ test:
 
 .PHONY: dev
 dev:
+	python setup.py install
 	pip install pylint pytest flake8
