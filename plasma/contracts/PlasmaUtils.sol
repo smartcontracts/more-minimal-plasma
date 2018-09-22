@@ -146,11 +146,27 @@ library PlasmaUtils {
      * @return RLP encoded deposit transaction.
      */
     function getDepositTransaction(address _owner, uint256 _amount) internal pure returns (bytes) {
-        bytes memory inputs = "\xc8\xc3\x80\x80\x80\xc3\x80\x80\x80";
-        bytes memory secondOutput = "\xd6\x94\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80";
-        bytes memory firstOutput = RLPEncode.encodeList([RLPEncode.encodeAddress(_owner), RLPEncode.encodeUint(_amount)]);
-        bytes memory encodedTransaction = RLPEncode.encodeList([inputs, RLPEncode.encodeList([firstOutput, secondOutput])]);
-        return encodedTransaction;
+        // Inputs and second output are constant.
+        bytes memory encodedInputs = "\xc8\xc3\x80\x80\x80\xc3\x80\x80\x80";
+        bytes memory encodedSecondOutput = "\xd6\x94\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80";
+    
+        // Encode the first output.
+        bytes[] memory firstOutput = new bytes[](2);
+        firstOutput[0] = RLPEncode.encodeAddress(_owner);
+        firstOutput[1] = RLPEncode.encodeUint(_amount);
+        bytes memory encodedFirstOutput = RLPEncode.encodeList(firstOutput);
+
+        // Combine both outputs.
+        bytes[] memory outputs = new bytes[](2);
+        outputs[0] = encodedFirstOutput;
+        outputs[1] = encodedSecondOutput;
+        bytes memory encodedOutputs = RLPEncode.encodeList(outputs);
+
+        // Encode the whole transaction;
+        bytes[] memory transaction = new bytes[](2);
+        transaction[0] = encodedInputs;
+        transaction[1] = encodedOutputs;
+        return RLPEncode.encodeList(transaction);
     }
 
     /**

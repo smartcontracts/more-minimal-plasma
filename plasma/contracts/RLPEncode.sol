@@ -79,7 +79,7 @@ library RLPEncode {
      * @param self The list of RLP encoded byte strings.
      * @return The RLP encoded list of items in bytes.
      */
-    function encodeList(bytes[2] memory self) internal pure returns (bytes) {
+    function encodeList(bytes[] memory self) internal pure returns (bytes) {
         bytes memory list = flatten(self);
         return ByteUtils.concat(encodeLength(list.length, 192), list);
     }
@@ -165,7 +165,7 @@ library RLPEncode {
      * @param self List of byte strings to flatten.
      * @return The flattened byte string.
      */
-    function flatten(bytes[2] memory self) private pure returns (bytes) {
+    function flatten(bytes[] memory self) private pure returns (bytes) {
         if (self.length == 0) {
             return new bytes(0);
         }
